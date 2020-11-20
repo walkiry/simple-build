@@ -16,8 +16,11 @@ tarball_retrieve()
 		rm -rf $2
 	fi
 
-	echo "GOT $1 $3"
-	curl -o $3 -O -P -L $1 
+	if [ ! -e archives ]; then
+		mkdir archives
+	fi
+
+	wget -O archives/${3} --max-redirect 30 $1 
 
 	if [ $? -ne 0 ]; then
 		printf "${RED} Address not found ${1} ${RESET}\n"
@@ -27,7 +30,7 @@ tarball_retrieve()
 	mkdir -p $2
 	echo $3
 
-	tar -xf $3 
+	tar -xf archives/${3}
 
 	cd $2
 	if [ $? -eq 0 ]; then
@@ -115,8 +118,7 @@ apply_patches()
 	cd ..
 }
 
-recipes=$(find . -maxdepth 1 -iname "*.autotool")
-
+recipes=$(find ./packages -maxdepth 2 -iname "*.sb")
 
 for arg in "$@"; do
 	shift
@@ -127,8 +129,72 @@ for arg in "$@"; do
 	esac
 done
 
+pos_graph=1
+pos_file="pos_graph.info"
+if [ -e  $pos_file ]; then
+	rm $pos_file
+fi
 
+map_deps=""
+#establish count, it's easier than file path
 for file in $recipes 
+do
+	map_deps="${map_deps}${pos_graph};${file}\n"
+	pos_graph=$((pos_graph+1))
+done
+
+echo "${map_deps}" > pos_graph.info
+map_deps_file="map_deps.info"
+
+if [ -e  $map_deps_file ]; then
+	rm $map_deps_file
+fi
+
+dependency_graph_lines=""
+recipes_ordered=""
+#read the dependencies
+for file in $recipes 
+do
+	. ${file}
+	filename="${file##*/}"
+	filename="${filename%.*}"
+
+	deps=$(eval echo \$"${filename}_dependencies")
+	file_depending=$(grep "${file}" $pos_file | cut -d";" -f1)
+	if [ -z $deps ]; then
+		recipes_ordered="${recipes_ordered}${file}\n" 
+		continue
+	fi
+
+	dependency_graph_lines="${dependency_graph_lines}${file_depending} "
+	for dep in $deps
+	do
+		file_dependency=$(grep "${dep}" $pos_file | cut -d";" -f1)
+		dependency_graph_lines="${dependency_graph_lines}${file_dependency} "
+	done
+	dependency_graph_lines="${dependency_graph_lines}\n"
+done
+
+echo "${dependency_graph_lines}" > $map_deps_file
+sorted_file_with_dependied=sorted_files_with_dpendencies.info
+
+tsort < $map_deps_file > "${sorted_file_with_dependied}"
+
+ordered_dependencies=$(tac "${sorted_file_with_dependied}")
+# look for filename form the sorted list
+for dependancy in $ordered_dependencies
+do
+	filename_dependancy=$(grep "${dependancy}" $pos_file | cut -d";" -f2)
+	result=$(echo $recipes_ordered | grep $filename_dependancy)
+	if [ -z $result ]; then
+		recipes_ordered="${recipes_ordered}${filename_dependancy}\n" 
+	fi
+done
+
+echo "${recipes_ordered}" > ordered_build
+exit 0
+
+for file in $recipes_ordered
 do
 	. ${file}
 	filename="${file##*/}"
@@ -183,7 +249,7 @@ do
 	       continue
         fi
 
-	if [ ! -e $git_src_dir/.stamp_downloaded ]; then
+	if [ ! -e $src_dirs/.stamp_downloaded ]; then
 		case "$typepackage" in
 			"git")
 				git_retrieve $git_addr $src_dirs $git_version
@@ -202,7 +268,7 @@ do
 	fi
 
 
-	if [ -e $src_dir/.stamp_built ]; then
+	if [ -e $src_dirs/.stamp_built ]; then
 		printf "${YELLOW} ${file}: Already got sources. " 
 		printf	"If you want to rebuild it delete .stamp_built${RESET}\n"
 		continue
