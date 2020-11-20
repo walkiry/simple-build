@@ -1,0 +1,240 @@
+#!/bin/sh
+
+RED="\e[31m"
+RESET="\e[0m"
+GREEN="\e[92m"
+YELLOW="\e[93m"
+
+tarball_retrieve()
+{
+	if [ $# -ne 3 ]; then
+		printf "${RED}Not enought param ${RESET}\n"
+		return	
+	fi
+
+	if [ -e $2 ]; then
+		rm -rf $2
+	fi
+
+	echo "GOT $1 $3"
+	curl -o $3 -O -P -L $1 
+
+	if [ $? -ne 0 ]; then
+		printf "${RED} Address not found ${1} ${RESET}\n"
+		return
+	fi
+
+	mkdir -p $2
+	echo $3
+
+	tar -xf $3 
+
+	cd $2
+	if [ $? -eq 0 ]; then
+		touch .stamp_downloaded
+	fi
+
+	cd ..
+}
+
+git_retrieve()
+{
+	if [ $# -ne 3 ]; then
+		printf "${RED}Not enought param ${RESET}\n"
+		return	
+	fi
+
+	if [ -e $2 ]; then
+		rm -rf $2
+	fi
+
+	git clone $1 $2
+
+	if [ $? -ne 0 ]; then
+		printf "\n${RED}===> Cloning source code $file ${RESET}\n\n"
+		exit $?
+	fi
+
+	cd $2
+	git checkout $3
+
+	if [ $? -eq 0 ]; then
+		touch .stamp_downloaded
+	fi
+
+	cd ..
+}
+
+autotoolized_src()
+{
+	local src_dir=${1}
+	shift
+	local fname=${1}
+	shift
+	local src_files=$@
+
+	if [ -e ${src_dir}/.stamp_autoolized ]; then
+		return
+	fi
+
+	./autotoolize ${src_dir} ${fname} ${src_files}
+
+	if [ $? -eq 0 ]; then
+		touch ${src_dir}/.stamp_autoolized
+	fi
+}
+
+apply_patches()
+{
+	local src_dir=${1}
+	shift
+	local file=${1}
+	shift
+	local filename=${1}
+	shift
+	patche_files=$@
+
+	echo "Patched ${patche_files}"
+
+	if [ -e ${src_dir}/.stamp_patched ]; then
+		return
+	fi
+	
+	cd $src_dir
+	for i in ${patche_files}; do
+		echo  "Applying patch $i"
+ 		patch -p1 <  ../patches/${filename}/${i}
+	done
+
+	if [ $? -ne 0 ]; then
+	       printf "${RED} ${file}: ${filename}_applying_patch did not succeed${RESET}\n"
+	else 
+		touch ./.stamp_patched
+        fi
+
+	cd ..
+}
+
+recipes=$(find . -maxdepth 1 -iname "*.autotool")
+
+
+for arg in "$@"; do
+	shift
+		case "$arg" in
+		"--install") PREFIX_INSTALL_PATH="$1";;
+		"--prefix-path") PREFIX_PATH="$1" ;;
+		*)
+	esac
+done
+
+
+for file in $recipes 
+do
+	. ${file}
+	filename="${file##*/}"
+	filename="${filename%.*}"
+	
+
+# Type could be git ot taball
+	typepackage="git"
+	printf "\n${GREEN}===> Autotool packet $file ${RESET}\n\n"
+
+	git_addr=$(eval echo \$"${filename}_git")
+	if [ -z $git_addr ]; then
+	       printf "Trying tarballs\n"
+
+		tarball_addr=$(eval echo \$"${filename}_tarball_site")
+		if [ -z $tarball_addr ]; then
+		       printf "${RED} In ${file}: ${filename}_tarball_site var does not exits ${RESET}\n"
+		       printf "${RED} In ${file}: ${filename}_git var does not exits ${RESET}\n"
+		       continue
+		fi
+
+		tarball_name=$(eval echo \$"${filename}_tarball_name")
+		if [ -z $tarball_addr ]; then
+		       printf "${RED} In ${file}: ${filename}_tarball_name var does not exits ${RESET}\n"
+		       continue
+		fi
+
+		src_dirs=$(eval echo \$"${filename}_src_dir")
+		echo "${filename}_src_dir"
+		if [ -z $src_dirs ]; then
+		       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
+		       continue
+		fi
+		typepackage="tarball"
+	else
+		src_dirs=$(eval echo \$"${filename}_src_dir")
+		if [ -z $src_dirs ]; then
+		       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
+		       continue
+		fi
+
+		git_version=$(eval echo \$"${filename}_version")
+		if [ -z $git_version ]; then
+		       printf "${RED}In ${file}: ${filename}_version does not exits ${RESET}\n"
+		       continue
+		fi
+	fi
+
+	build_cmd=$(eval echo \$"${filename}_build_cmd")
+	if [ -z "$build_cmd" ]; then
+	       printf "${RED}In ${file}: ${filename}_build_cmd does not exits ${RESET}\n"
+	       continue
+        fi
+
+	if [ ! -e $git_src_dir/.stamp_downloaded ]; then
+		case "$typepackage" in
+			"git")
+				git_retrieve $git_addr $src_dirs $git_version
+				;;
+			"tarball")
+				tarball_retrieve $tarball_addr $src_dirs $tarball_name
+				;;
+			*)
+	       			printf "${RED}In ${file}: ${filename} Not a valid type package"
+				continue
+				;;
+		esac
+	else 
+		printf "${YELLOW} ${file}: Already got sources. " 
+		printf	"If you want to redownload it delete .stamp_download${RESET}\n"
+	fi
+
+
+	if [ -e $src_dir/.stamp_built ]; then
+		printf "${YELLOW} ${file}: Already got sources. " 
+		printf	"If you want to rebuild it delete .stamp_built${RESET}\n"
+		continue
+	fi
+
+	autotoolize_cmd=$(eval echo \$"${filename}_need_autotoolize")
+	if [ ! -z $autotoolize_cmd ]; then
+		if [ $autotoolize_cmd -eq 1 ]; then
+			autotoolize_src_files=$(eval echo \$"${filename}_source_files")
+			autotoolized_src  $src_dir $filename $autotoolize_src_files
+		fi
+	fi
+
+	list_patches=$(eval echo \$"${filename}_patches")
+	echo "List of patches ${list_patches}"
+	if [ ! -z "${list_patches}" ]; then
+		apply_patches $src_dirs $file $filename ${list_patches}
+	fi
+
+	cd ${src_dirs}
+	echo "$(pwd) &  ${src_dirs}"
+
+	echo "Running ${build_cmd}"
+	eval ${build_cmd}
+	if [ $? -ne 0 ]; then
+	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
+	       exit 255
+        fi
+
+	touch .stamp_built
+	cd ..
+done
+
+printf "\n******Done getting packets******\n"
+
