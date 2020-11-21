@@ -312,7 +312,7 @@ do
 
 	cd ${src_dirs}
 	echo "Running ${build_cmd}"
-	eval ${build_cmd}
+	sh -c "eval ${build_cmd}"
 	if [ $? -ne 0 ]; then
 	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
 	       exit 255

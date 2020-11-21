@@ -1,0 +1,25 @@
+From cf85223c1766219f6ce4d7457d5c81d9bc7c393e Mon Sep 17 00:00:00 2001
+From: Alexandre Malki <alexandremalki@gmail.com>
+Date: Sat, 21 Nov 2020 18:25:29 +0100
+Subject: [PATCH] install header in system path as well
+
+---
+ cmake/internals.cmake | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cmake/internals.cmake b/cmake/internals.cmake
+index 247a354..f8e02cc 100644
+--- a/cmake/internals.cmake
++++ b/cmake/internals.cmake
+@@ -250,6 +250,8 @@ function(setup_headers_install_rules FILES_LIST INCLUDE_ABSOLUTE_BASE_FOLDER)
+ 		get_filename_component(dir ${f} DIRECTORY)
+ 		file(RELATIVE_PATH dir ${INCLUDE_ABSOLUTE_BASE_FOLDER} ${dir})
+ 		install(FILES ${f} CONFIGURATIONS Release DESTINATION include/${dir})
++		install(FILES ${f} DESTINATION ${CMAKE_PREFIX_PATH}/include/${dir})
++
+ 	endforeach()
+ endfunction()
+ 
+-- 
+2.25.1
+
