@@ -1,0 +1,9 @@
+# ncurses tarball only tar/tar.xz/tar.gz valid
+ncurses_tarball_site=https://ftp.gnu.org/gnu/ncurses/ncurses-6.2.tar.gz
+
+#This is the name of the tarball to keep track of
+ncurses_tarball_name=ncurses-6.2.tar.gz
+ncurses_src_dir=ncurses-6.2
+
+ncurses_need_autotoolize=0
+ncurses_build_cmd="./configure --exec-prefix=$PREFIX_INSTALL_PATH --prefix=$PREFIX_PATH && make -j4 && make install"

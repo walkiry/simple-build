@@ -5,9 +5,14 @@ RESET="\e[0m"
 GREEN="\e[92m"
 YELLOW="\e[93m"
 
+scriptpath="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+build_path="./build"
+log_path="./log-sb"
+
+
 tarball_retrieve()
 {
-	if [ $# -ne 3 ]; then
+	if [ $# -lt 3 ]; then
 		printf "${RED}Not enought param ${RESET}\n"
 		return	
 	fi
@@ -27,22 +32,19 @@ tarball_retrieve()
 		return
 	fi
 
-	mkdir -p $2
-	echo $3
-
-	tar -xf archives/${3}
+	tar -xvf archives/${3} -C $build_path
 
 	cd $2
 	if [ $? -eq 0 ]; then
 		touch .stamp_downloaded
 	fi
 
-	cd ..
+	cd - 
 }
 
 git_retrieve()
 {
-	if [ $# -ne 3 ]; then
+	if [ $# -lt 3 ]; then
 		printf "${RED}Not enought param ${RESET}\n"
 		return	
 	fi
@@ -61,11 +63,18 @@ git_retrieve()
 	cd $2
 	git checkout $3
 
+	if [ $# -eq 4 ]; then
+		if [ $4 -eq 1 ]; then  
+			git submodule init
+			git submodule update
+		fi
+	fi
+
 	if [ $? -eq 0 ]; then
 		touch .stamp_downloaded
 	fi
 
-	cd ..
+	cd -
 }
 
 autotoolized_src()
@@ -98,6 +107,7 @@ apply_patches()
 	patche_files=$@
 
 	echo "Patched ${patche_files}"
+	patch_folder=$(dirname ${scriptpath}/${file})
 
 	if [ -e ${src_dir}/.stamp_patched ]; then
 		return
@@ -106,7 +116,8 @@ apply_patches()
 	cd $src_dir
 	for i in ${patche_files}; do
 		echo  "Applying patch $i"
- 		patch -p1 <  ../patches/${filename}/${i}
+		echo $ ${patch_folder}/${i}
+ 		patch -p1 <  ${patch_folder}/${i}
 	done
 
 	if [ $? -ne 0 ]; then
@@ -115,7 +126,7 @@ apply_patches()
 		touch ./.stamp_patched
         fi
 
-	cd ..
+	cd -
 }
 
 recipes=$(find ./packages -maxdepth 2 -iname "*.sb")
@@ -129,8 +140,18 @@ for arg in "$@"; do
 	esac
 done
 
+if [ ! -e $log_path ];then
+	mkdir -p $log_path
+fi
+
+if [ ! -e $build_path ];then
+	mkdir -p $build_path
+fi
+
+export PATH=${PREFIX_PATH}/bin:$PATH
+
 pos_graph=1
-pos_file="pos_graph.info"
+pos_file="${log_path}/pos_graph.info"
 if [ -e  $pos_file ]; then
 	rm $pos_file
 fi
@@ -143,9 +164,9 @@ do
 	pos_graph=$((pos_graph+1))
 done
 
-echo "${map_deps}" > pos_graph.info
-map_deps_file="map_deps.info"
+echo "${map_deps}" > $pos_file
 
+map_deps_file="${log_path}/map_deps.info"
 if [ -e  $map_deps_file ]; then
 	rm $map_deps_file
 fi
@@ -162,7 +183,7 @@ do
 	deps=$(eval echo \$"${filename}_dependencies")
 	file_depending=$(grep "${file}" $pos_file | cut -d";" -f1)
 	if [ -z $deps ]; then
-		recipes_ordered="${recipes_ordered}${file}\n" 
+		recipes_ordered="${recipes_ordered}${file} " 
 		continue
 	fi
 
@@ -176,8 +197,7 @@ do
 done
 
 echo "${dependency_graph_lines}" > $map_deps_file
-sorted_file_with_dependied=sorted_files_with_dpendencies.info
-
+sorted_file_with_dependied="${log_path}/sorted_files_with_dpendencies.info"
 tsort < $map_deps_file > "${sorted_file_with_dependied}"
 
 ordered_dependencies=$(tac "${sorted_file_with_dependied}")
@@ -186,20 +206,19 @@ for dependancy in $ordered_dependencies
 do
 	filename_dependancy=$(grep "${dependancy}" $pos_file | cut -d";" -f2)
 	result=$(echo $recipes_ordered | grep $filename_dependancy)
-	if [ -z $result ]; then
-		recipes_ordered="${recipes_ordered}${filename_dependancy}\n" 
+	if [ -z "${result}" ]; then
+		recipes_ordered="${recipes_ordered}${filename_dependancy} " 
 	fi
 done
 
-echo "${recipes_ordered}" > ordered_build
-exit 0
-
-for file in $recipes_ordered
+echo "${recipes_ordered}" > "${log_path}/ordered_build.info"
+ordered_list=$(eval echo "${recipes_ordered}")
+for file in $ordered_list
 do
+	echo "Opening file $file"
 	. ${file}
 	filename="${file##*/}"
 	filename="${filename%.*}"
-	
 
 # Type could be git ot taball
 	typepackage="git"
@@ -222,37 +241,40 @@ do
 		       continue
 		fi
 
-		src_dirs=$(eval echo \$"${filename}_src_dir")
-		echo "${filename}_src_dir"
-		if [ -z $src_dirs ]; then
-		       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
-		       continue
-		fi
 		typepackage="tarball"
 	else
-		src_dirs=$(eval echo \$"${filename}_src_dir")
-		if [ -z $src_dirs ]; then
-		       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
-		       continue
-		fi
-
 		git_version=$(eval echo \$"${filename}_version")
 		if [ -z $git_version ]; then
 		       printf "${RED}In ${file}: ${filename}_version does not exits ${RESET}\n"
 		       continue
 		fi
+
+		git_recursive=$(eval echo \$"${filename}_git_recursive")
+		if [ -z $git_recursive ]; then
+		       printf "${RED}In ${file}: ${filename}_git_recursive assuming recursive ${RESET}\n"
+		fi
 	fi
 
+	src_dirs=$(eval echo \$"${filename}_src_dir")
+	if [ -z $src_dirs ]; then
+	       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
+	       continue
+	fi
+
+	# Do no create a mess store it somewhere else than the root
+	src_dirs="${build_path}/${src_dirs}"
 	build_cmd=$(eval echo \$"${filename}_build_cmd")
 	if [ -z "$build_cmd" ]; then
 	       printf "${RED}In ${file}: ${filename}_build_cmd does not exits ${RESET}\n"
 	       continue
         fi
 
+
+
 	if [ ! -e $src_dirs/.stamp_downloaded ]; then
 		case "$typepackage" in
 			"git")
-				git_retrieve $git_addr $src_dirs $git_version
+				git_retrieve $git_addr $src_dirs $git_version $git_recursive
 				;;
 			"tarball")
 				tarball_retrieve $tarball_addr $src_dirs $tarball_name
@@ -289,8 +311,6 @@ do
 	fi
 
 	cd ${src_dirs}
-	echo "$(pwd) &  ${src_dirs}"
-
 	echo "Running ${build_cmd}"
 	eval ${build_cmd}
 	if [ $? -ne 0 ]; then
@@ -299,7 +319,7 @@ do
         fi
 
 	touch .stamp_built
-	cd ..
+	cd -
 done
 
 printf "\n******Done getting packets******\n"

@@ -1,0 +1,10 @@
+# Basic recipe
+
+libpcap_git=git@github.com:the-tcpdump-group/libpcap.git
+libpcap_src_dir=./libpcap
+libpcap_version=libpcap-1.9.1
+
+libpcap_dependencies="flex"
+libpcap_need_autotoolize=0
+libpcap_build_cmd="./configure --exec-prefix=${PREFIX_INSTALL_PATH} --prefix=${PREFIX_PATH} && make -j4 && make install"
+

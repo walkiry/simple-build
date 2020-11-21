@@ -1,0 +1,32 @@
+From b2b65b59bea3db04ce3cbb4e1bb0437a4da999a9 Mon Sep 17 00:00:00 2001
+From: Alexandre Malki <alexandremalki@gmail.com>
+Date: Fri, 20 Nov 2020 14:16:04 +0100
+Subject: [PATCH] retrieving standard prefix path to get out of the tree
+ compilation
+
+---
+ CMakeLists.txt | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 03a950b..34b4c79 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -61,6 +61,14 @@ project(LA_avdecc)
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+ 
++include_directories( ${CMAKE_PREFIX_PATH}/include/
++		     ${CMAKE_PREFIX_PATH}/usr/local/include/
++		     ${CMAKE_PREFIX_PATH}/usr/include/)
++
++link_directories(${CMAKE_PREFIX_PATH}/lib/
++		     ${CMAKE_PREFIX_PATH}/usr/local/lib/
++		     ${CMAKE_PREFIX_PATH}/usr/lib/)
++
+ # Set minimum OSX version
+ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9 CACHE INTERNAL "Force the target to be at least a Mac OS X 10.9" FORCE)
+ 
+-- 
+2.25.1
+

@@ -4,6 +4,7 @@ bison_tarball_site=https://ftp.gnu.org/gnu/bison/bison-3.7.tar.xz
 #This is the name of the tarball to keep track
 bison_tarball_name=bison-3.7.tar.xz
 bison_src_dir=bison-3.7
+bison_version="3.7"
 
 bison_need_autotoolize=0
 bison_build_cmd="./configure --exec-prefix=$PREFIX_INSTALL_PATH --prefix=$PREFIX_PATH && make -j4 && make install"
