@@ -1,0 +1,9 @@
+# gtest 
+gtest_git=https://github.com/google/googletest.git
+gtest_src_dir=gtest-v1.10.x
+gtest_version=v1.10.x
+
+gtest_need_autotoolize=0
+gtest_git_recursive=0
+gtest_build_cmd="mkdir -p build && cd build && cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$PREFIX_INSTALL_PATH -DCMAKE_PREFIX_PATH=$PREFIX_PATH -DBUILD_SHARED_LIBS=ON && ninja -j0 && ninja install"
+
