@@ -129,16 +129,72 @@ apply_patches()
 	cd -
 }
 
-recipes=$(find ./packages -maxdepth 2 -iname "*.sb")
+# This function retrieve the recipes from the package folder: args 1 should be the path to the config
+get_recipes_to_build()
+{
+	recipes_found=$(find ./packages -maxdepth 2 -iname "*.sb")
+	local recipe_to_build=""
+	local path_to_config=
 
+	if [ $# -eq 0 ]; then
+		echo ${recipes_found}
+		return 0
+	fi
+
+	local path_to_config=${1}
+	if [ ! -e ${path_to_config} ]; then
+		echo ${recipes_found}
+		return 0
+	fi
+
+	# Find the recipes that are compatible
+	. ${path_to_config}
+	package_needed=$(eval echo "${list_dependencies}")
+	if [ -z "$package_needed" ]; then
+		recipes_ordered="${recipes_ordered}${file} "
+		return 0
+	fi
+
+	for needed_recipes in $package_needed
+	do
+		for recipe in $recipes_found
+		do
+			. ${recipe}
+			recipe_path=$recipe
+			recipe="${recipe##*/}"
+			recipe="${recipe%.*}"
+			if [ "$recipe" =  "$needed_recipes" ]; then
+				recipe_to_build="${recipe_to_build}${recipe_path}\n"
+				dependencies=$(eval echo \$"${recipe}_dependency")
+				if [ -z $dependencies ]; then
+					recipe_to_build="${recipe_to_build}${dependencies}"
+				fi
+			fi
+		done
+	done
+
+	recipe_to_build=$(echo $recipe_to_build | sort - | uniq - )
+	echo ${recipe_to_build}
+	return 0
+}
+
+path_to_config=""
 for arg in "$@"; do
 	shift
 		case "$arg" in
 		"--install") PREFIX_INSTALL_PATH="$1";;
 		"--prefix-path") PREFIX_PATH="$1" ;;
+		"--config") path_to_config=${1} ;;
 		*)
 	esac
 done
+
+recipes=$(get_recipes_to_build ${path_to_config})
+echo "Found $recipes"
+
+if [ $? -ne 0 ]; then
+	print "${YELLOW} Error while looking for configuration at path $path_to_config ${RESET}"
+fi
 
 if [ ! -e $log_path ];then
 	mkdir -p $log_path
@@ -157,6 +213,7 @@ if [ -e  $pos_file ]; then
 fi
 
 map_deps=""
+
 #establish count, it's easier than file path
 for file in $recipes 
 do
@@ -173,9 +230,11 @@ fi
 
 dependency_graph_lines=""
 recipes_ordered=""
+
 #read the dependencies
 for file in $recipes 
 do
+	echo ${recipes}
 	. ${file}
 	filename="${file##*/}"
 	filename="${filename%.*}"
@@ -216,6 +275,7 @@ ordered_list=$(eval echo "${recipes_ordered}")
 for file in $ordered_list
 do
 	echo "Opening file $file"
+
 	. ${file}
 	filename="${file##*/}"
 	filename="${filename%.*}"
