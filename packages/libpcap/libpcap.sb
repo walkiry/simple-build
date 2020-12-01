@@ -1,6 +1,6 @@
 # Basic recipe
 
-libpcap_git=git@github.com:the-tcpdump-group/libpcap.git
+libpcap_git=https://github.com/the-tcpdump-group/libpcap.git
 libpcap_src_dir=./libpcap
 libpcap_version=libpcap-1.9.1
 
