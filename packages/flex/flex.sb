@@ -4,6 +4,8 @@ flex_tarball_site=https://github.com/westes/flex/files/981163/flex-2.6.4.tar.gz
 flex_tarball_name=flex-2.6.4.tar.gz
 flex_src_dir=flex-2.6.4
 
+flex_linux_compat=1
+
 flex_dependency=bison
 flex_need_autotoolize=0
 flex_build_cmd="./configure --exec-prefix=$PREFIX_INSTALL_PATH --prefix=$PREFIX_PATH && make -j4 && make install"

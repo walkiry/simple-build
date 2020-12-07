@@ -6,5 +6,7 @@ bison_tarball_name=bison-3.7.tar.xz
 bison_src_dir=bison-3.7
 bison_version="3.7"
 
+bison_linux_compat=1
+
 bison_need_autotoolize=0
 bison_build_cmd="./configure --exec-prefix=$PREFIX_INSTALL_PATH --prefix=$PREFIX_PATH && make -j4 && make install"
