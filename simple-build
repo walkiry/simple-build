@@ -187,6 +187,8 @@ apply_patches()
 	shift
 	local filename=${1}
 	shift
+	local moderetrieved=${1}
+	shift
 	patche_files=$@
 
 	echo "Patched ${patche_files}"
@@ -200,7 +202,11 @@ apply_patches()
 	for i in ${patche_files}; do
 		echo  "Applying patch $i"
 		echo $ ${patch_folder}/${i}
- 		patch -p1 <  ${patch_folder}/${i}
+		if [ "$moderetrieved" = "git" ]; then
+ 			git apply -p1 <  ${patch_folder}/${i}
+		else
+ 			patch -p1 <  ${patch_folder}/${i}
+		fi
 	done
 
 	if [ $? -ne 0 ]; then
@@ -383,6 +389,16 @@ do
 		printf	"If you want to redownload it delete .stamp_download${RESET}${LR}"
 	fi
 
+	check_is_windows
+	if [ $? -eq 0 ]; then
+		windows_compat=$(eval echo \$"${filename}_windows_compat")
+		if [ ! -z $windows_compat ]; then
+			printf "${GREEN}Adding ${src_dirs} to the cmakefile ${RESET}${LR}"
+			if [ $windows_compat -eq 1 ]; then
+				cmake_subproject_list="${cmake_subproject_list}${LR}add_subdirectory(${src_dirs})"
+			fi
+		fi
+	fi
 
 	if [ -e $src_dirs/.stamp_built ]; then
 		printf "${YELLOW} ${file}: Already got sources. " 
@@ -402,21 +418,13 @@ do
 	list_patches=$(eval echo \$"${filename}_patches")
 	echo "List of patches ${list_patches}"
 	if [ ! -z "${list_patches}" ]; then
-		apply_patches $src_dirs $file $filename ${list_patches}
+		apply_patches $src_dirs $file $filename $typepackage ${list_patches} 
 	fi
 
 	cd ${src_dirs}
 
 	check_is_windows
 	if [ $? -eq 0 ]; then
-		windows_compat=$(eval echo \$"${filename}_windows_compat")
-		if [ ! -z $windows_compat ]; then
-			printf "${GREEN}Adding ${src_dirs} to the cmakefile ${RESET}${LR}"
-			if [ $windows_compat -eq 1 ]; then
-				cmake_subproject_list="${cmake_subproject_list}${LR}add_subdirectory(${src_dirs})"
-			fi
-		fi
-	else
 		echo "Running ${build_cmd}"
 		sh -c "eval ${build_cmd}"
 		if [ $? -ne 0 ]; then

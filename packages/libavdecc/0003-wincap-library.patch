@@ -1,0 +1,3757 @@
+From 80f6a8736ce96da7fa8316ec25e3881d0ccd166d Mon Sep 17 00:00:00 2001
+From: Alexandre Malki <alexandremalki@gmail.com>
+Date: Mon, 7 Dec 2020 21:23:10 +0100
+Subject: [PATCH] wincap library
+
+---
+ externals/3rdparty/winpcap/Include/Packet32.h | 359 +++++++
+ .../winpcap/Include/Win32-Extensions.h        | 113 +++
+ externals/3rdparty/winpcap/Include/bittypes.h | 137 +++
+ externals/3rdparty/winpcap/Include/ip6_misc.h | 163 +++
+ externals/3rdparty/winpcap/Include/pcap-bpf.h |  47 +
+ .../3rdparty/winpcap/Include/pcap-namedb.h    |  42 +
+ .../3rdparty/winpcap/Include/pcap-stdinc.h    |  93 ++
+ externals/3rdparty/winpcap/Include/pcap.h     |  45 +
+ .../3rdparty/winpcap/Include/pcap/bluetooth.h |  48 +
+ externals/3rdparty/winpcap/Include/pcap/bpf.h | 934 ++++++++++++++++++
+ .../3rdparty/winpcap/Include/pcap/namedb.h    |  89 ++
+ .../3rdparty/winpcap/Include/pcap/pcap.h      | 407 ++++++++
+ externals/3rdparty/winpcap/Include/pcap/sll.h | 129 +++
+ externals/3rdparty/winpcap/Include/pcap/usb.h |  90 ++
+ .../3rdparty/winpcap/Include/pcap/vlan.h      |  46 +
+ .../3rdparty/winpcap/Include/remote-ext.h     | 444 +++++++++
+ externals/3rdparty/winpcap/Lib/Packet.lib     | Bin 0 -> 8450 bytes
+ externals/3rdparty/winpcap/Lib/libpacket.a    | Bin 0 -> 20814 bytes
+ externals/3rdparty/winpcap/Lib/libwpcap.a     | Bin 0 -> 54276 bytes
+ externals/3rdparty/winpcap/Lib/wpcap.lib      | Bin 0 -> 19320 bytes
+ externals/3rdparty/winpcap/Lib/x64/Packet.lib | Bin 0 -> 8290 bytes
+ externals/3rdparty/winpcap/Lib/x64/wpcap.lib  | Bin 0 -> 18892 bytes
+ 22 files changed, 3186 insertions(+)
+ create mode 100644 externals/3rdparty/winpcap/Include/Packet32.h
+ create mode 100644 externals/3rdparty/winpcap/Include/Win32-Extensions.h
+ create mode 100644 externals/3rdparty/winpcap/Include/bittypes.h
+ create mode 100644 externals/3rdparty/winpcap/Include/ip6_misc.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap-bpf.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap-namedb.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap-stdinc.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/bluetooth.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/bpf.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/namedb.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/pcap.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/sll.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/usb.h
+ create mode 100644 externals/3rdparty/winpcap/Include/pcap/vlan.h
+ create mode 100644 externals/3rdparty/winpcap/Include/remote-ext.h
+ create mode 100644 externals/3rdparty/winpcap/Lib/Packet.lib
+ create mode 100644 externals/3rdparty/winpcap/Lib/libpacket.a
+ create mode 100644 externals/3rdparty/winpcap/Lib/libwpcap.a
+ create mode 100644 externals/3rdparty/winpcap/Lib/wpcap.lib
+ create mode 100644 externals/3rdparty/winpcap/Lib/x64/Packet.lib
+ create mode 100644 externals/3rdparty/winpcap/Lib/x64/wpcap.lib
+
+diff --git a/externals/3rdparty/winpcap/Include/Packet32.h b/externals/3rdparty/winpcap/Include/Packet32.h
+new file mode 100644
+index 0000000..64be055
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/Packet32.h
+@@ -0,0 +1,359 @@
++/*
++ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
++ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ * notice, this list of conditions and the following disclaimer in the
++ * documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
++ * nor the names of its contributors may be used to endorse or promote 
++ * products derived from this software without specific prior written 
++ * permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++/** @ingroup packetapi
++ *  @{ 
++ */
++
++/** @defgroup packet32h Packet.dll definitions and data structures
++ *  Packet32.h contains the data structures and the definitions used by packet.dll.
++ *  The file is used both by the Win9x and the WinNTx versions of packet.dll, and can be included
++ *  by the applications that use the functions of this library
++ *  @{
++ */
++
++#ifndef __PACKET32
++#define __PACKET32
++
++#include <winsock2.h>
++
++#ifdef HAVE_AIRPCAP_API
++#include <airpcap.h>
++#else
++#if !defined(AIRPCAP_HANDLE__EAE405F5_0171_9592_B3C2_C19EC426AD34__DEFINED_)
++#define AIRPCAP_HANDLE__EAE405F5_0171_9592_B3C2_C19EC426AD34__DEFINED_
++typedef struct _AirpcapHandle *PAirpcapHandle;
++#endif /* AIRPCAP_HANDLE__EAE405F5_0171_9592_B3C2_C19EC426AD34__DEFINED_ */
++#endif /* HAVE_AIRPCAP_API */
++
++#ifdef HAVE_DAG_API
++#include <dagc.h>
++#endif /* HAVE_DAG_API */
++
++// Working modes
++#define PACKET_MODE_CAPT 0x0 ///< Capture mode
++#define PACKET_MODE_STAT 0x1 ///< Statistical mode
++#define PACKET_MODE_MON 0x2 ///< Monitoring mode
++#define PACKET_MODE_DUMP 0x10 ///< Dump mode
++#define PACKET_MODE_STAT_DUMP MODE_DUMP | MODE_STAT ///< Statistical dump Mode
++
++
++/// Alignment macro. Defines the alignment size.
++#define Packet_ALIGNMENT sizeof(int)
++/// Alignment macro. Rounds up to the next even multiple of Packet_ALIGNMENT. 
++#define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))
++
++#define NdisMediumNull	-1		///< Custom linktype: NDIS doesn't provide an equivalent
++#define NdisMediumCHDLC	-2		///< Custom linktype: NDIS doesn't provide an equivalent
++#define NdisMediumPPPSerial	-3	///< Custom linktype: NDIS doesn't provide an equivalent
++#define NdisMediumBare80211	-4	///< Custom linktype: NDIS doesn't provide an equivalent
++#define NdisMediumRadio80211	-5	///< Custom linktype: NDIS doesn't provide an equivalent
++#define NdisMediumPpi		-6	///< Custom linktype: NDIS doesn't provide an equivalent
++
++// Loopback behaviour definitions
++#define NPF_DISABLE_LOOPBACK	1	///< Drop the packets sent by the NPF driver
++#define NPF_ENABLE_LOOPBACK		2	///< Capture the packets sent by the NPF driver
++
++/*!
++  \brief Network type structure.
++
++  This structure is used by the PacketGetNetType() function to return information on the current adapter's type and speed.
++*/
++typedef struct NetType
++{
++	UINT LinkType;	///< The MAC of the current network adapter (see function PacketGetNetType() for more information)
++	ULONGLONG LinkSpeed;	///< The speed of the network in bits per second
++}NetType;
++
++
++//some definitions stolen from libpcap
++
++#ifndef BPF_MAJOR_VERSION
++
++/*!
++  \brief A BPF pseudo-assembly program.
++
++  The program will be injected in the kernel by the PacketSetBPF() function and applied to every incoming packet. 
++*/
++struct bpf_program 
++{
++	UINT bf_len;				///< Indicates the number of instructions of the program, i.e. the number of struct bpf_insn that will follow.
++	struct bpf_insn *bf_insns;	///< A pointer to the first instruction of the program.
++};
++
++/*!
++  \brief A single BPF pseudo-instruction.
++
++  bpf_insn contains a single instruction for the BPF register-machine. It is used to send a filter program to the driver.
++*/
++struct bpf_insn 
++{
++	USHORT	code;		///< Instruction type and addressing mode.
++	UCHAR 	jt;			///< Jump if true
++	UCHAR 	jf;			///< Jump if false
++	int k;				///< Generic field used for various purposes.
++};
++
++/*!
++  \brief Structure that contains a couple of statistics values on the current capture.
++
++  It is used by packet.dll to return statistics about a capture session.
++*/
++struct bpf_stat 
++{
++	UINT bs_recv;		///< Number of packets that the driver received from the network adapter 
++						///< from the beginning of the current capture. This value includes the packets 
++						///< lost by the driver.
++	UINT bs_drop;		///< number of packets that the driver lost from the beginning of a capture. 
++						///< Basically, a packet is lost when the the buffer of the driver is full. 
++						///< In this situation the packet cannot be stored and the driver rejects it.
++	UINT ps_ifdrop;		///< drops by interface. XXX not yet supported
++	UINT bs_capt;		///< number of packets that pass the filter, find place in the kernel buffer and
++						///< thus reach the application.
++};
++
++/*!
++  \brief Packet header.
++
++  This structure defines the header associated with every packet delivered to the application.
++*/
++struct bpf_hdr 
++{
++	struct timeval	bh_tstamp;	///< The timestamp associated with the captured packet. 
++								///< It is stored in a TimeVal structure.
++	UINT	bh_caplen;			///< Length of captured portion. The captured portion <b>can be different</b>
++								///< from the original packet, because it is possible (with a proper filter)
++								///< to instruct the driver to capture only a portion of the packets.
++	UINT	bh_datalen;			///< Original length of packet
++	USHORT		bh_hdrlen;		///< Length of bpf header (this struct plus alignment padding). In some cases,
++								///< a padding could be added between the end of this structure and the packet
++								///< data for performance reasons. This filed can be used to retrieve the actual data 
++								///< of the packet.
++};
++
++/*!
++  \brief Dump packet header.
++
++  This structure defines the header associated with the packets in a buffer to be used with PacketSendPackets().
++  It is simpler than the bpf_hdr, because it corresponds to the header associated by WinPcap and libpcap to a
++  packet in a dump file. This makes straightforward sending WinPcap dump files to the network.
++*/
++struct dump_bpf_hdr{
++    struct timeval	ts;			///< Time stamp of the packet
++    UINT			caplen;		///< Length of captured portion. The captured portion can smaller than the 
++								///< the original packet, because it is possible (with a proper filter) to 
++								///< instruct the driver to capture only a portion of the packets. 
++    UINT			len;		///< Length of the original packet (off wire).
++};
++
++
++#endif
++
++struct bpf_stat;
++
++#define        DOSNAMEPREFIX   TEXT("Packet_")	///< Prefix added to the adapters device names to create the WinPcap devices
++#define        MAX_LINK_NAME_LENGTH	64			//< Maximum length of the devices symbolic links
++#define        NMAX_PACKET 65535
++
++/*!
++  \brief Addresses of a network adapter.
++
++  This structure is used by the PacketGetNetInfoEx() function to return the IP addresses associated with 
++  an adapter.
++*/
++typedef struct npf_if_addr {
++	struct sockaddr_storage IPAddress;	///< IP address.
++	struct sockaddr_storage SubnetMask;	///< Netmask for that address.
++	struct sockaddr_storage Broadcast;	///< Broadcast address.
++}npf_if_addr;
++
++
++#define ADAPTER_NAME_LENGTH 256 + 12	///<  Maximum length for the name of an adapter. The value is the same used by the IP Helper API.
++#define ADAPTER_DESC_LENGTH 128			///<  Maximum length for the description of an adapter. The value is the same used by the IP Helper API.
++#define MAX_MAC_ADDR_LENGTH 8			///<  Maximum length for the link layer address of an adapter. The value is the same used by the IP Helper API.
++#define MAX_NETWORK_ADDRESSES 16		///<  Maximum length for the link layer address of an adapter. The value is the same used by the IP Helper API.
++
++
++typedef struct WAN_ADAPTER_INT WAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
++typedef WAN_ADAPTER *PWAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
++
++#define INFO_FLAG_NDIS_ADAPTER		0	///< Flag for ADAPTER_INFO: this is a traditional ndis adapter
++#define INFO_FLAG_NDISWAN_ADAPTER	1	///< Flag for ADAPTER_INFO: this is a NdisWan adapter, and it's managed by WANPACKET
++#define INFO_FLAG_DAG_CARD			2	///< Flag for ADAPTER_INFO: this is a DAG card
++#define INFO_FLAG_DAG_FILE			6	///< Flag for ADAPTER_INFO: this is a DAG file
++#define INFO_FLAG_DONT_EXPORT		8	///< Flag for ADAPTER_INFO: when this flag is set, the adapter will not be listed or openend by winpcap. This allows to prevent exporting broken network adapters, like for example FireWire ones.
++#define INFO_FLAG_AIRPCAP_CARD		16	///< Flag for ADAPTER_INFO: this is an airpcap card
++#define INFO_FLAG_NPFIM_DEVICE		32
++
++/*!
++  \brief Describes an opened network adapter.
++
++  This structure is the most important for the functioning of packet.dll, but the great part of its fields
++  should be ignored by the user, since the library offers functions that avoid to cope with low-level parameters
++*/
++typedef struct _ADAPTER  { 
++	HANDLE hFile;				///< \internal Handle to an open instance of the NPF driver.
++	CHAR  SymbolicLink[MAX_LINK_NAME_LENGTH]; ///< \internal A string containing the name of the network adapter currently opened.
++	int NumWrites;				///< \internal Number of times a packets written on this adapter will be repeated 
++								///< on the wire.
++	HANDLE ReadEvent;			///< A notification event associated with the read calls on the adapter.
++								///< It can be passed to standard Win32 functions (like WaitForSingleObject
++								///< or WaitForMultipleObjects) to wait until the driver's buffer contains some 
++								///< data. It is particularly useful in GUI applications that need to wait 
++								///< concurrently on several events. In Windows NT/2000 the PacketSetMinToCopy()
++								///< function can be used to define the minimum amount of data in the kernel buffer
++								///< that will cause the event to be signalled. 
++	
++	UINT ReadTimeOut;			///< \internal The amount of time after which a read on the driver will be released and 
++								///< ReadEvent will be signaled, also if no packets were captured
++	CHAR Name[ADAPTER_NAME_LENGTH];
++	PWAN_ADAPTER pWanAdapter;
++	UINT Flags;					///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
++
++#ifdef HAVE_AIRPCAP_API
++	PAirpcapHandle	AirpcapAd;
++#endif // HAVE_AIRPCAP_API
++
++#ifdef HAVE_NPFIM_API
++	void* NpfImHandle;
++#endif // HAVE_NPFIM_API
++
++#ifdef HAVE_DAG_API
++	dagc_t *pDagCard;			///< Pointer to the dagc API adapter descriptor for this adapter
++	PCHAR DagBuffer;			///< Pointer to the buffer with the packets that is received from the DAG card
++	struct timeval DagReadTimeout;	///< Read timeout. The dagc API requires a timeval structure
++	unsigned DagFcsLen;			///< Length of the frame check sequence attached to any packet by the card. Obtained from the registry
++	DWORD DagFastProcess;		///< True if the user requests fast capture processing on this card. Higher level applications can use this value to provide a faster but possibly unprecise capture (for example, libpcap doesn't convert the timestamps).
++#endif // HAVE_DAG_API
++}  ADAPTER, *LPADAPTER;
++
++/*!
++  \brief Structure that contains a group of packets coming from the driver.
++
++  This structure defines the header associated with every packet delivered to the application.
++*/
++typedef struct _PACKET {  
++	HANDLE       hEvent;		///< \deprecated Still present for compatibility with old applications.
++	OVERLAPPED   OverLapped;	///< \deprecated Still present for compatibility with old applications.
++	PVOID        Buffer;		///< Buffer with containing the packets. See the PacketReceivePacket() for
++								///< details about the organization of the data in this buffer
++	UINT         Length;		///< Length of the buffer
++	DWORD        ulBytesReceived;	///< Number of valid bytes present in the buffer, i.e. amount of data
++									///< received by the last call to PacketReceivePacket()
++	BOOLEAN      bIoComplete;	///< \deprecated Still present for compatibility with old applications.
++}  PACKET, *LPPACKET;
++
++/*!
++  \brief Structure containing an OID request.
++
++  It is used by the PacketRequest() function to send an OID to the interface card driver. 
++  It can be used, for example, to retrieve the status of the error counters on the adapter, its MAC address, 
++  the list of the multicast groups defined on it, and so on.
++*/
++struct _PACKET_OID_DATA {
++    ULONG Oid;					///< OID code. See the Microsoft DDK documentation or the file ntddndis.h
++								///< for a complete list of valid codes.
++    ULONG Length;				///< Length of the data field
++    UCHAR Data[1];				///< variable-lenght field that contains the information passed to or received 
++								///< from the adapter.
++}; 
++typedef struct _PACKET_OID_DATA PACKET_OID_DATA, *PPACKET_OID_DATA;
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/**
++ *  @}
++ */
++
++/*
++BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
++								 CHAR *Value,
++								 UINT *pValueLen,
++								 CHAR *DefaultVal);
++
++BOOLEAN QueryWinPcapRegistryStringW(WCHAR *SubKeyName,
++								 WCHAR *Value,
++								 UINT *pValueLen,
++								 WCHAR *DefaultVal);
++*/
++								 
++//---------------------------------------------------------------------------
++// EXPORTED FUNCTIONS
++//---------------------------------------------------------------------------
++
++PCHAR PacketGetVersion();
++PCHAR PacketGetDriverVersion();
++BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes);
++BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites);
++BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode);
++BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout);
++BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp);
++BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavior);
++INT PacketSetSnapLen(LPADAPTER AdapterObject,int snaplen);
++BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s);
++BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s);
++BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim);
++BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type);
++LPADAPTER PacketOpenAdapter(PCHAR AdapterName);
++BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET pPacket,BOOLEAN Sync);
++INT PacketSendPackets(LPADAPTER AdapterObject,PVOID PacketBuff,ULONG Size, BOOLEAN Sync);
++LPPACKET PacketAllocatePacket(void);
++VOID PacketInitPacket(LPPACKET lpPacket,PVOID  Buffer,UINT  Length);
++VOID PacketFreePacket(LPPACKET lpPacket);
++BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync);
++BOOLEAN PacketSetHwFilter(LPADAPTER AdapterObject,ULONG Filter);
++BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize);
++BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries);
++BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  OidData);
++HANDLE PacketGetReadEvent(LPADAPTER AdapterObject);
++BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len);
++BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks);
++BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
++BOOL PacketStopDriver();
++VOID PacketCloseAdapter(LPADAPTER lpAdapter);
++BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength);
++BOOLEAN PacketStartOemEx(PCHAR errorString, UINT errorStringLength, ULONG flags);
++PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject);
++
++//
++// Used by PacketStartOemEx
++//
++#define PACKET_START_OEM_NO_NETMON	0x00000001
++
++#ifdef __cplusplus
++}
++#endif 
++
++#endif //__PACKET32
+diff --git a/externals/3rdparty/winpcap/Include/Win32-Extensions.h b/externals/3rdparty/winpcap/Include/Win32-Extensions.h
+new file mode 100644
+index 0000000..ad3be25
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/Win32-Extensions.h
+@@ -0,0 +1,113 @@
++/*
++ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
++ * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ * notice, this list of conditions and the following disclaimer in the
++ * documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
++ * nor the names of its contributors may be used to endorse or promote 
++ * products derived from this software without specific prior written 
++ * permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#ifndef __WIN32_EXTENSIONS_H__
++#define __WIN32_EXTENSIONS_H__
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* Definitions */
++
++/*!
++  \brief A queue of raw packets that will be sent to the network with pcap_sendqueue_transmit().
++*/
++struct pcap_send_queue
++{
++	u_int maxlen;		///< Maximum size of the the queue, in bytes. This variable contains the size of the buffer field.
++	u_int len;			///< Current size of the queue, in bytes.
++	char *buffer;		///< Buffer containing the packets to be sent.
++};
++
++typedef struct pcap_send_queue pcap_send_queue;
++
++/*!
++  \brief This typedef is a support for the pcap_get_airpcap_handle() function
++*/
++#if !defined(AIRPCAP_HANDLE__EAE405F5_0171_9592_B3C2_C19EC426AD34__DEFINED_)
++#define AIRPCAP_HANDLE__EAE405F5_0171_9592_B3C2_C19EC426AD34__DEFINED_
++typedef struct _AirpcapHandle *PAirpcapHandle;
++#endif
++
++#define		BPF_MEM_EX_IMM	0xc0
++#define		BPF_MEM_EX_IND	0xe0
++
++/*used for ST*/
++#define		BPF_MEM_EX		0xc0
++#define		BPF_TME					0x08
++
++#define		BPF_LOOKUP				0x90   
++#define		BPF_EXECUTE				0xa0
++#define		BPF_INIT				0xb0
++#define		BPF_VALIDATE			0xc0
++#define		BPF_SET_ACTIVE			0xd0
++#define		BPF_RESET				0xe0
++#define		BPF_SET_MEMORY			0x80
++#define		BPF_GET_REGISTER_VALUE	0x70
++#define		BPF_SET_REGISTER_VALUE	0x60
++#define		BPF_SET_WORKING			0x50
++#define		BPF_SET_ACTIVE_READ		0x40
++#define		BPF_SET_AUTODELETION	0x30
++#define		BPF_SEPARATION			0xff
++
++/* Prototypes */
++pcap_send_queue* pcap_sendqueue_alloc(u_int memsize);
++
++void pcap_sendqueue_destroy(pcap_send_queue* queue);
++
++int pcap_sendqueue_queue(pcap_send_queue* queue, const struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
++
++u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
++
++HANDLE pcap_getevent(pcap_t *p);
++
++struct pcap_stat *pcap_stats_ex(pcap_t *p, int *pcap_stat_size);
++
++int pcap_setuserbuffer(pcap_t *p, int size);
++
++int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
++
++int pcap_live_dump_ended(pcap_t *p, int sync);
++
++int pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data);
++
++int pcap_start_oem(char* err_str, int flags);
++
++PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif //__WIN32_EXTENSIONS_H__
+diff --git a/externals/3rdparty/winpcap/Include/bittypes.h b/externals/3rdparty/winpcap/Include/bittypes.h
+new file mode 100644
+index 0000000..558a0b5
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/bittypes.h
+@@ -0,0 +1,137 @@
++/*
++ * Copyright (C) 1999 WIDE Project.
++ * All rights reserved.
++ * 
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the project nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ * 
++ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++#ifndef _BITTYPES_H
++#define _BITTYPES_H
++
++#ifndef HAVE_U_INT8_T
++
++#if SIZEOF_CHAR == 1
++typedef unsigned char u_int8_t;
++typedef signed char int8_t;
++#elif SIZEOF_INT == 1
++typedef unsigned int u_int8_t;
++typedef signed int int8_t;
++#else  /* XXX */
++#error "there's no appropriate type for u_int8_t"
++#endif
++#define HAVE_U_INT8_T 1
++#define HAVE_INT8_T 1
++
++#endif /* HAVE_U_INT8_T */
++
++#ifndef HAVE_U_INT16_T 
++
++#if SIZEOF_SHORT == 2
++typedef unsigned short u_int16_t;
++typedef signed short int16_t;
++#elif SIZEOF_INT == 2
++typedef unsigned int u_int16_t;
++typedef signed int int16_t;
++#elif SIZEOF_CHAR == 2
++typedef unsigned char u_int16_t;
++typedef signed char int16_t;
++#else  /* XXX */
++#error "there's no appropriate type for u_int16_t"
++#endif
++#define HAVE_U_INT16_T 1
++#define HAVE_INT16_T 1
++
++#endif /* HAVE_U_INT16_T */
++
++#ifndef HAVE_U_INT32_T
++
++#if SIZEOF_INT == 4
++typedef unsigned int u_int32_t;
++typedef signed int int32_t;
++#elif SIZEOF_LONG == 4
++typedef unsigned long u_int32_t;
++typedef signed long int32_t;
++#elif SIZEOF_SHORT == 4
++typedef unsigned short u_int32_t;
++typedef signed short int32_t;
++#else  /* XXX */
++#error "there's no appropriate type for u_int32_t"
++#endif
++#define HAVE_U_INT32_T 1
++#define HAVE_INT32_T 1
++
++#endif /* HAVE_U_INT32_T */
++
++#ifndef HAVE_U_INT64_T
++#if SIZEOF_LONG_LONG == 8
++typedef unsigned long long u_int64_t;
++typedef long long int64_t;
++#elif defined(_MSC_EXTENSIONS)
++typedef unsigned _int64 u_int64_t;
++typedef _int64 int64_t;
++#elif SIZEOF_INT == 8
++typedef unsigned int u_int64_t;
++#elif SIZEOF_LONG == 8
++typedef unsigned long u_int64_t;
++#elif SIZEOF_SHORT == 8
++typedef unsigned short u_int64_t;
++#else  /* XXX */
++#error "there's no appropriate type for u_int64_t"
++#endif
++
++#endif /* HAVE_U_INT64_T */
++
++#ifndef PRId64
++#ifdef _MSC_EXTENSIONS
++#define PRId64	"I64d"
++#else /* _MSC_EXTENSIONS */
++#define PRId64	"lld"
++#endif /* _MSC_EXTENSIONS */
++#endif /* PRId64 */
++
++#ifndef PRIo64
++#ifdef _MSC_EXTENSIONS
++#define PRIo64	"I64o"
++#else /* _MSC_EXTENSIONS */
++#define PRIo64	"llo"
++#endif /* _MSC_EXTENSIONS */
++#endif /* PRIo64 */
++
++#ifndef PRIx64
++#ifdef _MSC_EXTENSIONS
++#define PRIx64	"I64x"
++#else /* _MSC_EXTENSIONS */
++#define PRIx64	"llx"
++#endif /* _MSC_EXTENSIONS */
++#endif /* PRIx64 */
++
++#ifndef PRIu64
++#ifdef _MSC_EXTENSIONS
++#define PRIu64	"I64u"
++#else /* _MSC_EXTENSIONS */
++#define PRIu64	"llu"
++#endif /* _MSC_EXTENSIONS */
++#endif /* PRIu64 */
++
++#endif /* _BITTYPES_H */
+diff --git a/externals/3rdparty/winpcap/Include/ip6_misc.h b/externals/3rdparty/winpcap/Include/ip6_misc.h
+new file mode 100644
+index 0000000..562fa61
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/ip6_misc.h
+@@ -0,0 +1,163 @@
++/*
++ * Copyright (c) 1993, 1994, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that: (1) source code distributions
++ * retain the above copyright notice and this paragraph in its entirety, (2)
++ * distributions including binary code include the above copyright notice and
++ * this paragraph in its entirety in the documentation or other materials
++ * provided with the distribution, and (3) all advertising materials mentioning
++ * features or use of this software display the following acknowledgement:
++ * ``This product includes software developed by the University of California,
++ * Lawrence Berkeley Laboratory and its contributors.'' Neither the name of
++ * the University nor the names of its contributors may be used to endorse
++ * or promote products derived from this software without specific prior
++ * written permission.
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/Win32/Include/ip6_misc.h,v 1.5 2006-01-22 18:02:18 gianluca Exp $ (LBL)
++ */
++
++/*
++ * This file contains a collage of declarations for IPv6 from FreeBSD not present in Windows
++ */
++
++#include <winsock2.h>
++
++#include <ws2tcpip.h>
++
++#ifndef __MINGW32__
++#define	IN_MULTICAST(a)		IN_CLASSD(a)
++#endif
++
++#define	IN_EXPERIMENTAL(a)	((((u_int32_t) (a)) & 0xf0000000) == 0xf0000000)
++
++#define	IN_LOOPBACKNET		127
++
++#if defined(__MINGW32__) && defined(DEFINE_ADDITIONAL_IPV6_STUFF)
++/* IPv6 address */
++struct in6_addr
++  {
++    union
++      {
++	u_int8_t		u6_addr8[16];
++	u_int16_t	u6_addr16[8];
++	u_int32_t	u6_addr32[4];
++      } in6_u;
++#define s6_addr			in6_u.u6_addr8
++#define s6_addr16		in6_u.u6_addr16
++#define s6_addr32		in6_u.u6_addr32
++#define s6_addr64		in6_u.u6_addr64
++  };
++
++#define IN6ADDR_ANY_INIT { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
++#define IN6ADDR_LOOPBACK_INIT { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }
++#endif /* __MINGW32__ */
++
++
++#if (defined _MSC_VER) || (defined(__MINGW32__) && defined(DEFINE_ADDITIONAL_IPV6_STUFF))
++typedef unsigned short	sa_family_t;
++#endif
++
++
++#if defined(__MINGW32__) && defined(DEFINE_ADDITIONAL_IPV6_STUFF)
++
++#define	__SOCKADDR_COMMON(sa_prefix) \
++  sa_family_t sa_prefix##family
++
++/* Ditto, for IPv6.  */
++struct sockaddr_in6
++  {
++    __SOCKADDR_COMMON (sin6_);
++    u_int16_t sin6_port;		/* Transport layer port # */
++    u_int32_t sin6_flowinfo;	/* IPv6 flow information */
++    struct in6_addr sin6_addr;	/* IPv6 address */
++  };
++
++#define IN6_IS_ADDR_V4MAPPED(a) \
++	((((u_int32_t *) (a))[0] == 0) && (((u_int32_t *) (a))[1] == 0) && \
++	 (((u_int32_t *) (a))[2] == htonl (0xffff)))
++
++#define IN6_IS_ADDR_MULTICAST(a) (((u_int8_t *) (a))[0] == 0xff)
++
++#define IN6_IS_ADDR_LINKLOCAL(a) \
++	((((u_int32_t *) (a))[0] & htonl (0xffc00000)) == htonl (0xfe800000))
++
++#define IN6_IS_ADDR_LOOPBACK(a) \
++	(((u_int32_t *) (a))[0] == 0 && ((u_int32_t *) (a))[1] == 0 && \
++	 ((u_int32_t *) (a))[2] == 0 && ((u_int32_t *) (a))[3] == htonl (1))
++#endif /* __MINGW32__ */
++
++#define ip6_vfc   ip6_ctlun.ip6_un2_vfc
++#define ip6_flow  ip6_ctlun.ip6_un1.ip6_un1_flow
++#define ip6_plen  ip6_ctlun.ip6_un1.ip6_un1_plen
++#define ip6_nxt   ip6_ctlun.ip6_un1.ip6_un1_nxt
++#define ip6_hlim  ip6_ctlun.ip6_un1.ip6_un1_hlim
++#define ip6_hops  ip6_ctlun.ip6_un1.ip6_un1_hlim
++
++#define nd_rd_type               nd_rd_hdr.icmp6_type
++#define nd_rd_code               nd_rd_hdr.icmp6_code
++#define nd_rd_cksum              nd_rd_hdr.icmp6_cksum
++#define nd_rd_reserved           nd_rd_hdr.icmp6_data32[0]
++
++/*
++ *	IPV6 extension headers
++ */
++#define IPPROTO_HOPOPTS		0	/* IPv6 hop-by-hop options	*/
++#define IPPROTO_IPV6		41  /* IPv6 header.  */
++#define IPPROTO_ROUTING		43	/* IPv6 routing header		*/
++#define IPPROTO_FRAGMENT	44	/* IPv6 fragmentation header	*/
++#define IPPROTO_ESP		50	/* encapsulating security payload */
++#define IPPROTO_AH		51	/* authentication header	*/
++#define IPPROTO_ICMPV6		58	/* ICMPv6			*/
++#define IPPROTO_NONE		59	/* IPv6 no next header		*/
++#define IPPROTO_DSTOPTS		60	/* IPv6 destination options	*/
++#define IPPROTO_PIM			103 /* Protocol Independent Multicast.  */
++
++#define	 IPV6_RTHDR_TYPE_0 0
++
++/* Option types and related macros */
++#define IP6OPT_PAD1		0x00	/* 00 0 00000 */
++#define IP6OPT_PADN		0x01	/* 00 0 00001 */
++#define IP6OPT_JUMBO		0xC2	/* 11 0 00010 = 194 */
++#define IP6OPT_JUMBO_LEN	6
++#define IP6OPT_ROUTER_ALERT	0x05	/* 00 0 00101 */
++
++#define IP6OPT_RTALERT_LEN	4
++#define IP6OPT_RTALERT_MLD	0	/* Datagram contains an MLD message */
++#define IP6OPT_RTALERT_RSVP	1	/* Datagram contains an RSVP message */
++#define IP6OPT_RTALERT_ACTNET	2 	/* contains an Active Networks msg */
++#define IP6OPT_MINLEN		2
++
++#define IP6OPT_BINDING_UPDATE	0xc6	/* 11 0 00110 */
++#define IP6OPT_BINDING_ACK	0x07	/* 00 0 00111 */
++#define IP6OPT_BINDING_REQ	0x08	/* 00 0 01000 */
++#define IP6OPT_HOME_ADDRESS	0xc9	/* 11 0 01001 */
++#define IP6OPT_EID		0x8a	/* 10 0 01010 */
++
++#define IP6OPT_TYPE(o)		((o) & 0xC0)
++#define IP6OPT_TYPE_SKIP	0x00
++#define IP6OPT_TYPE_DISCARD	0x40
++#define IP6OPT_TYPE_FORCEICMP	0x80
++#define IP6OPT_TYPE_ICMP	0xC0
++
++#define IP6OPT_MUTABLE		0x20
++
++
++#if defined(__MINGW32__) && defined(DEFINE_ADDITIONAL_IPV6_STUFF)
++#ifndef EAI_ADDRFAMILY
++struct addrinfo {
++	int	ai_flags;	/* AI_PASSIVE, AI_CANONNAME */
++	int	ai_family;	/* PF_xxx */
++	int	ai_socktype;	/* SOCK_xxx */
++	int	ai_protocol;	/* 0 or IPPROTO_xxx for IPv4 and IPv6 */
++	size_t	ai_addrlen;	/* length of ai_addr */
++	char	*ai_canonname;	/* canonical name for hostname */
++	struct sockaddr *ai_addr;	/* binary address */
++	struct addrinfo *ai_next;	/* next structure in linked list */
++};
++#endif
++#endif /* __MINGW32__ */
+diff --git a/externals/3rdparty/winpcap/Include/pcap-bpf.h b/externals/3rdparty/winpcap/Include/pcap-bpf.h
+new file mode 100644
+index 0000000..5fe129d
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap-bpf.h
+@@ -0,0 +1,47 @@
++/*-
++ * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * This code is derived from the Stanford/CMU enet packet filter,
++ * (net/enet.c) distributed as part of 4.3BSD, and code contributed
++ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence 
++ * Berkeley Laboratory.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *      This product includes software developed by the University of
++ *      California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap-bpf.h,v 1.50 2007/04/01 21:43:55 guy Exp $ (LBL)
++ */
++
++/*
++ * For backwards compatibility.
++ *
++ * Note to OS vendors: do NOT get rid of this file!  Some applications
++ * might expect to be able to include <pcap-bpf.h>.
++ */
++#include <pcap/bpf.h>
+diff --git a/externals/3rdparty/winpcap/Include/pcap-namedb.h b/externals/3rdparty/winpcap/Include/pcap-namedb.h
+new file mode 100644
+index 0000000..80a2f00
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap-namedb.h
+@@ -0,0 +1,42 @@
++/*
++ * Copyright (c) 1994, 1996
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the Computer Systems
++ *	Engineering Group at Lawrence Berkeley Laboratory.
++ * 4. Neither the name of the University nor of the Laboratory may be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap-namedb.h,v 1.13 2006/10/04 18:13:32 guy Exp $ (LBL)
++ */
++
++/*
++ * For backwards compatibility.
++ *
++ * Note to OS vendors: do NOT get rid of this file!  Some applications
++ * might expect to be able to include <pcap-namedb.h>.
++ */
++#include <pcap/namedb.h>
+diff --git a/externals/3rdparty/winpcap/Include/pcap-stdinc.h b/externals/3rdparty/winpcap/Include/pcap-stdinc.h
+new file mode 100644
+index 0000000..4176041
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap-stdinc.h
+@@ -0,0 +1,93 @@
++/*
++ * Copyright (c) 2002 - 2005 NetGroup, Politecnico di Torino (Italy)
++ * Copyright (c) 2005 - 2009 CACE Technologies, Inc. Davis (California)
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ * notice, this list of conditions and the following disclaimer in the
++ * documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the Politecnico di Torino nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap-stdinc.h,v 1.10.2.1 2008-10-06 15:38:39 gianluca Exp $ (LBL)
++ */
++
++#define SIZEOF_CHAR 1
++#define SIZEOF_SHORT 2
++#define SIZEOF_INT 4
++#ifndef _MSC_EXTENSIONS
++#define SIZEOF_LONG_LONG 8
++#endif
++
++/*
++ * Avoids a compiler warning in case this was already defined      
++ * (someone defined _WINSOCKAPI_ when including 'windows.h', in order
++ * to prevent it from including 'winsock.h')
++ */
++#ifdef _WINSOCKAPI_
++#undef _WINSOCKAPI_
++#endif
++#include <winsock2.h>
++
++#include <fcntl.h>
++
++#include "bittypes.h"
++#include <time.h>
++#include <io.h>
++
++#ifndef __MINGW32__
++#include "IP6_misc.h"
++#endif
++
++#define caddr_t char*
++
++#if _MSC_VER < 1500
++#define snprintf _snprintf
++#define vsnprintf _vsnprintf
++#define strdup _strdup
++#endif
++
++#define inline __inline 
++
++#ifdef __MINGW32__
++#include <stdint.h>
++#else /*__MINGW32__*/
++/* MSVC compiler */
++#ifndef _UINTPTR_T_DEFINED
++#ifdef  _WIN64
++typedef unsigned __int64    uintptr_t;
++#else
++typedef _W64 unsigned int   uintptr_t;
++#endif
++#define _UINTPTR_T_DEFINED
++#endif
++
++#ifndef _INTPTR_T_DEFINED
++#ifdef  _WIN64
++typedef __int64    intptr_t;
++#else
++typedef _W64 int   intptr_t;
++#endif
++#define _INTPTR_T_DEFINED
++#endif 
++
++#endif /*__MINGW32__*/
+diff --git a/externals/3rdparty/winpcap/Include/pcap.h b/externals/3rdparty/winpcap/Include/pcap.h
+new file mode 100644
+index 0000000..935f949
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap.h
+@@ -0,0 +1,45 @@
++/*
++ * Copyright (c) 1993, 1994, 1995, 1996, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the Computer Systems
++ *	Engineering Group at Lawrence Berkeley Laboratory.
++ * 4. Neither the name of the University nor of the Laboratory may be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap.h,v 1.59 2006/10/04 18:09:22 guy Exp $ (LBL)
++ */
++
++/*
++ * For backwards compatibility.
++ *
++ * Note to OS vendors: do NOT get rid of this file!  Many applications
++ * expect to be able to include <pcap.h>, and at least some of them
++ * go through contortions in their configure scripts to try to detect
++ * OSes that have "helpfully" moved pcap.h to <pcap/pcap.h> without
++ * leaving behind a <pcap.h> file.
++ */
++#include <pcap/pcap.h>
+diff --git a/externals/3rdparty/winpcap/Include/pcap/bluetooth.h b/externals/3rdparty/winpcap/Include/pcap/bluetooth.h
+new file mode 100644
+index 0000000..7bf65df
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/bluetooth.h
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (c) 2006 Paolo Abeni (Italy)
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ * notice, this list of conditions and the following disclaimer in the
++ * documentation and/or other materials provided with the distribution.
++ * 3. The name of the author may not be used to endorse or promote 
++ * products derived from this software without specific prior written 
++ * permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * bluetooth data struct
++ * By Paolo Abeni <paolo.abeni@email.it>
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/bluetooth.h,v 1.1 2007/09/22 02:10:17 guy Exp $
++ */
++ 
++#ifndef _PCAP_BLUETOOTH_STRUCTS_H__
++#define _PCAP_BLUETOOTH_STRUCTS_H__
++
++/*
++ * Header prepended libpcap to each bluetooth h:4 frame.
++ * fields are in network byte order
++ */
++typedef struct _pcap_bluetooth_h4_header {
++	u_int32_t direction; /* if first bit is set direction is incoming */
++} pcap_bluetooth_h4_header;
++
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/pcap/bpf.h b/externals/3rdparty/winpcap/Include/pcap/bpf.h
+new file mode 100644
+index 0000000..9f4ca33
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/bpf.h
+@@ -0,0 +1,934 @@
++/*-
++ * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * This code is derived from the Stanford/CMU enet packet filter,
++ * (net/enet.c) distributed as part of 4.3BSD, and code contributed
++ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence 
++ * Berkeley Laboratory.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *      This product includes software developed by the University of
++ *      California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/bpf.h,v 1.19.2.8 2008-09-22 20:16:01 guy Exp $ (LBL)
++ */
++
++/*
++ * This is libpcap's cut-down version of bpf.h; it includes only
++ * the stuff needed for the code generator and the userland BPF
++ * interpreter, and the libpcap APIs for setting filters, etc..
++ *
++ * "pcap-bpf.c" will include the native OS version, as it deals with
++ * the OS's BPF implementation.
++ *
++ * XXX - should this all just be moved to "pcap.h"?
++ */
++
++#ifndef BPF_MAJOR_VERSION
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* BSD style release date */
++#define BPF_RELEASE 199606
++
++#ifdef MSDOS /* must be 32-bit */
++typedef long          bpf_int32;
++typedef unsigned long bpf_u_int32;
++#else
++typedef	int bpf_int32;
++typedef	u_int bpf_u_int32;
++#endif
++
++/*
++ * Alignment macros.  BPF_WORDALIGN rounds up to the next 
++ * even multiple of BPF_ALIGNMENT. 
++ */
++#ifndef __NetBSD__
++#define BPF_ALIGNMENT sizeof(bpf_int32)
++#else
++#define BPF_ALIGNMENT sizeof(long)
++#endif
++#define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
++
++#define BPF_MAXBUFSIZE 0x8000
++#define BPF_MINBUFSIZE 32
++
++/*
++ * Structure for "pcap_compile()", "pcap_setfilter()", etc..
++ */
++struct bpf_program {
++	u_int bf_len;
++	struct bpf_insn *bf_insns;
++};
++ 
++/*
++ * Struct return by BIOCVERSION.  This represents the version number of 
++ * the filter language described by the instruction encodings below.
++ * bpf understands a program iff kernel_major == filter_major &&
++ * kernel_minor >= filter_minor, that is, if the value returned by the
++ * running kernel has the same major number and a minor number equal
++ * equal to or less than the filter being downloaded.  Otherwise, the
++ * results are undefined, meaning an error may be returned or packets
++ * may be accepted haphazardly.
++ * It has nothing to do with the source code version.
++ */
++struct bpf_version {
++	u_short bv_major;
++	u_short bv_minor;
++};
++/* Current version number of filter architecture. */
++#define BPF_MAJOR_VERSION 1
++#define BPF_MINOR_VERSION 1
++
++/*
++ * Data-link level type codes.
++ *
++ * Do *NOT* add new values to this list without asking
++ * "tcpdump-workers@lists.tcpdump.org" for a value.  Otherwise, you run
++ * the risk of using a value that's already being used for some other
++ * purpose, and of having tools that read libpcap-format captures not
++ * being able to handle captures with your new DLT_ value, with no hope
++ * that they will ever be changed to do so (as that would destroy their
++ * ability to read captures using that value for that other purpose).
++ */
++
++/*
++ * These are the types that are the same on all platforms, and that
++ * have been defined by <net/bpf.h> for ages.
++ */
++#define DLT_NULL	0	/* BSD loopback encapsulation */
++#define DLT_EN10MB	1	/* Ethernet (10Mb) */
++#define DLT_EN3MB	2	/* Experimental Ethernet (3Mb) */
++#define DLT_AX25	3	/* Amateur Radio AX.25 */
++#define DLT_PRONET	4	/* Proteon ProNET Token Ring */
++#define DLT_CHAOS	5	/* Chaos */
++#define DLT_IEEE802	6	/* 802.5 Token Ring */
++#define DLT_ARCNET	7	/* ARCNET, with BSD-style header */
++#define DLT_SLIP	8	/* Serial Line IP */
++#define DLT_PPP		9	/* Point-to-point Protocol */
++#define DLT_FDDI	10	/* FDDI */
++
++/*
++ * These are types that are different on some platforms, and that
++ * have been defined by <net/bpf.h> for ages.  We use #ifdefs to
++ * detect the BSDs that define them differently from the traditional
++ * libpcap <net/bpf.h>
++ *
++ * XXX - DLT_ATM_RFC1483 is 13 in BSD/OS, and DLT_RAW is 14 in BSD/OS,
++ * but I don't know what the right #define is for BSD/OS.
++ */
++#define DLT_ATM_RFC1483	11	/* LLC-encapsulated ATM */
++
++#ifdef __OpenBSD__
++#define DLT_RAW		14	/* raw IP */
++#else
++#define DLT_RAW		12	/* raw IP */
++#endif
++
++/*
++ * Given that the only OS that currently generates BSD/OS SLIP or PPP
++ * is, well, BSD/OS, arguably everybody should have chosen its values
++ * for DLT_SLIP_BSDOS and DLT_PPP_BSDOS, which are 15 and 16, but they
++ * didn't.  So it goes.
++ */
++#if defined(__NetBSD__) || defined(__FreeBSD__)
++#ifndef DLT_SLIP_BSDOS
++#define DLT_SLIP_BSDOS	13	/* BSD/OS Serial Line IP */
++#define DLT_PPP_BSDOS	14	/* BSD/OS Point-to-point Protocol */
++#endif
++#else
++#define DLT_SLIP_BSDOS	15	/* BSD/OS Serial Line IP */
++#define DLT_PPP_BSDOS	16	/* BSD/OS Point-to-point Protocol */
++#endif
++
++/*
++ * 17 is used for DLT_OLD_PFLOG in OpenBSD;
++ *     OBSOLETE: DLT_PFLOG is 117 in OpenBSD now as well. See below.
++ * 18 is used for DLT_PFSYNC in OpenBSD; don't use it for anything else.
++ */
++
++#define DLT_ATM_CLIP	19	/* Linux Classical-IP over ATM */
++
++/*
++ * Apparently Redback uses this for its SmartEdge 400/800.  I hope
++ * nobody else decided to use it, too.
++ */
++#define DLT_REDBACK_SMARTEDGE	32
++
++/*
++ * These values are defined by NetBSD; other platforms should refrain from
++ * using them for other purposes, so that NetBSD savefiles with link
++ * types of 50 or 51 can be read as this type on all platforms.
++ */
++#define DLT_PPP_SERIAL	50	/* PPP over serial with HDLC encapsulation */
++#define DLT_PPP_ETHER	51	/* PPP over Ethernet */
++
++/*
++ * The Axent Raptor firewall - now the Symantec Enterprise Firewall - uses
++ * a link-layer type of 99 for the tcpdump it supplies.  The link-layer
++ * header has 6 bytes of unknown data, something that appears to be an
++ * Ethernet type, and 36 bytes that appear to be 0 in at least one capture
++ * I've seen.
++ */
++#define DLT_SYMANTEC_FIREWALL	99
++
++/*
++ * Values between 100 and 103 are used in capture file headers as
++ * link-layer types corresponding to DLT_ types that differ
++ * between platforms; don't use those values for new DLT_ new types.
++ */
++
++/*
++ * This value was defined by libpcap 0.5; platforms that have defined
++ * it with a different value should define it here with that value -
++ * a link type of 104 in a save file will be mapped to DLT_C_HDLC,
++ * whatever value that happens to be, so programs will correctly
++ * handle files with that link type regardless of the value of
++ * DLT_C_HDLC.
++ *
++ * The name DLT_C_HDLC was used by BSD/OS; we use that name for source
++ * compatibility with programs written for BSD/OS.
++ *
++ * libpcap 0.5 defined it as DLT_CHDLC; we define DLT_CHDLC as well,
++ * for source compatibility with programs written for libpcap 0.5.
++ */
++#define DLT_C_HDLC	104	/* Cisco HDLC */
++#define DLT_CHDLC	DLT_C_HDLC
++
++#define DLT_IEEE802_11	105	/* IEEE 802.11 wireless */
++
++/*
++ * 106 is reserved for Linux Classical IP over ATM; it's like DLT_RAW,
++ * except when it isn't.  (I.e., sometimes it's just raw IP, and
++ * sometimes it isn't.)  We currently handle it as DLT_LINUX_SLL,
++ * so that we don't have to worry about the link-layer header.)
++ */
++
++/*
++ * Frame Relay; BSD/OS has a DLT_FR with a value of 11, but that collides
++ * with other values.
++ * DLT_FR and DLT_FRELAY packets start with the Q.922 Frame Relay header
++ * (DLCI, etc.).
++ */
++#define DLT_FRELAY	107
++
++/*
++ * OpenBSD DLT_LOOP, for loopback devices; it's like DLT_NULL, except
++ * that the AF_ type in the link-layer header is in network byte order.
++ *
++ * DLT_LOOP is 12 in OpenBSD, but that's DLT_RAW in other OSes, so
++ * we don't use 12 for it in OSes other than OpenBSD.
++ */
++#ifdef __OpenBSD__
++#define DLT_LOOP	12
++#else
++#define DLT_LOOP	108
++#endif
++
++/*
++ * Encapsulated packets for IPsec; DLT_ENC is 13 in OpenBSD, but that's
++ * DLT_SLIP_BSDOS in NetBSD, so we don't use 13 for it in OSes other
++ * than OpenBSD.
++ */
++#ifdef __OpenBSD__
++#define DLT_ENC		13
++#else
++#define DLT_ENC		109
++#endif
++
++/*
++ * Values between 110 and 112 are reserved for use in capture file headers
++ * as link-layer types corresponding to DLT_ types that might differ
++ * between platforms; don't use those values for new DLT_ types
++ * other than the corresponding DLT_ types.
++ */
++
++/*
++ * This is for Linux cooked sockets.
++ */
++#define DLT_LINUX_SLL	113
++
++/*
++ * Apple LocalTalk hardware.
++ */
++#define DLT_LTALK	114
++
++/*
++ * Acorn Econet.
++ */
++#define DLT_ECONET	115
++
++/*
++ * Reserved for use with OpenBSD ipfilter.
++ */
++#define DLT_IPFILTER	116
++
++/*
++ * OpenBSD DLT_PFLOG; DLT_PFLOG is 17 in OpenBSD, but that's DLT_LANE8023
++ * in SuSE 6.3, so we can't use 17 for it in capture-file headers.
++ *
++ * XXX: is there a conflict with DLT_PFSYNC 18 as well?
++ */
++#ifdef __OpenBSD__
++#define DLT_OLD_PFLOG	17
++#define DLT_PFSYNC	18
++#endif
++#define DLT_PFLOG	117
++
++/*
++ * Registered for Cisco-internal use.
++ */
++#define DLT_CISCO_IOS	118
++
++/*
++ * For 802.11 cards using the Prism II chips, with a link-layer
++ * header including Prism monitor mode information plus an 802.11
++ * header.
++ */
++#define DLT_PRISM_HEADER	119
++
++/*
++ * Reserved for Aironet 802.11 cards, with an Aironet link-layer header
++ * (see Doug Ambrisko's FreeBSD patches).
++ */
++#define DLT_AIRONET_HEADER	120
++
++/*
++ * Reserved for Siemens HiPath HDLC.
++ */
++#define DLT_HHDLC		121
++
++/*
++ * This is for RFC 2625 IP-over-Fibre Channel.
++ *
++ * This is not for use with raw Fibre Channel, where the link-layer
++ * header starts with a Fibre Channel frame header; it's for IP-over-FC,
++ * where the link-layer header starts with an RFC 2625 Network_Header
++ * field.
++ */
++#define DLT_IP_OVER_FC		122
++
++/*
++ * This is for Full Frontal ATM on Solaris with SunATM, with a
++ * pseudo-header followed by an AALn PDU.
++ *
++ * There may be other forms of Full Frontal ATM on other OSes,
++ * with different pseudo-headers.
++ *
++ * If ATM software returns a pseudo-header with VPI/VCI information
++ * (and, ideally, packet type information, e.g. signalling, ILMI,
++ * LANE, LLC-multiplexed traffic, etc.), it should not use
++ * DLT_ATM_RFC1483, but should get a new DLT_ value, so tcpdump
++ * and the like don't have to infer the presence or absence of a
++ * pseudo-header and the form of the pseudo-header.
++ */
++#define DLT_SUNATM		123	/* Solaris+SunATM */
++
++/* 
++ * Reserved as per request from Kent Dahlgren <kent@praesum.com>
++ * for private use.
++ */
++#define DLT_RIO                 124     /* RapidIO */
++#define DLT_PCI_EXP             125     /* PCI Express */
++#define DLT_AURORA              126     /* Xilinx Aurora link layer */
++
++/*
++ * Header for 802.11 plus a number of bits of link-layer information
++ * including radio information, used by some recent BSD drivers as
++ * well as the madwifi Atheros driver for Linux.
++ */
++#define DLT_IEEE802_11_RADIO	127	/* 802.11 plus radiotap radio header */
++
++/*
++ * Reserved for the TZSP encapsulation, as per request from
++ * Chris Waters <chris.waters@networkchemistry.com>
++ * TZSP is a generic encapsulation for any other link type,
++ * which includes a means to include meta-information
++ * with the packet, e.g. signal strength and channel
++ * for 802.11 packets.
++ */
++#define DLT_TZSP                128     /* Tazmen Sniffer Protocol */
++
++/*
++ * BSD's ARCNET headers have the source host, destination host,
++ * and type at the beginning of the packet; that's what's handed
++ * up to userland via BPF.
++ *
++ * Linux's ARCNET headers, however, have a 2-byte offset field
++ * between the host IDs and the type; that's what's handed up
++ * to userland via PF_PACKET sockets.
++ *
++ * We therefore have to have separate DLT_ values for them.
++ */
++#define DLT_ARCNET_LINUX	129	/* ARCNET */
++
++/*
++ * Juniper-private data link types, as per request from
++ * Hannes Gredler <hannes@juniper.net>.  The DLT_s are used
++ * for passing on chassis-internal metainformation such as
++ * QOS profiles, etc..
++ */
++#define DLT_JUNIPER_MLPPP       130
++#define DLT_JUNIPER_MLFR        131
++#define DLT_JUNIPER_ES          132
++#define DLT_JUNIPER_GGSN        133
++#define DLT_JUNIPER_MFR         134
++#define DLT_JUNIPER_ATM2        135
++#define DLT_JUNIPER_SERVICES    136
++#define DLT_JUNIPER_ATM1        137
++
++/*
++ * Apple IP-over-IEEE 1394, as per a request from Dieter Siegmund
++ * <dieter@apple.com>.  The header that's presented is an Ethernet-like
++ * header:
++ *
++ *	#define FIREWIRE_EUI64_LEN	8
++ *	struct firewire_header {
++ *		u_char  firewire_dhost[FIREWIRE_EUI64_LEN];
++ *		u_char  firewire_shost[FIREWIRE_EUI64_LEN];
++ *		u_short firewire_type;
++ *	};
++ *
++ * with "firewire_type" being an Ethernet type value, rather than,
++ * for example, raw GASP frames being handed up.
++ */
++#define DLT_APPLE_IP_OVER_IEEE1394	138
++
++/*
++ * Various SS7 encapsulations, as per a request from Jeff Morriss
++ * <jeff.morriss[AT]ulticom.com> and subsequent discussions.
++ */
++#define DLT_MTP2_WITH_PHDR	139	/* pseudo-header with various info, followed by MTP2 */
++#define DLT_MTP2		140	/* MTP2, without pseudo-header */
++#define DLT_MTP3		141	/* MTP3, without pseudo-header or MTP2 */
++#define DLT_SCCP		142	/* SCCP, without pseudo-header or MTP2 or MTP3 */
++
++/*
++ * DOCSIS MAC frames.
++ */
++#define DLT_DOCSIS		143
++
++/*
++ * Linux-IrDA packets. Protocol defined at http://www.irda.org.
++ * Those packets include IrLAP headers and above (IrLMP...), but
++ * don't include Phy framing (SOF/EOF/CRC & byte stuffing), because Phy
++ * framing can be handled by the hardware and depend on the bitrate.
++ * This is exactly the format you would get capturing on a Linux-IrDA
++ * interface (irdaX), but not on a raw serial port.
++ * Note the capture is done in "Linux-cooked" mode, so each packet include
++ * a fake packet header (struct sll_header). This is because IrDA packet
++ * decoding is dependant on the direction of the packet (incomming or
++ * outgoing).
++ * When/if other platform implement IrDA capture, we may revisit the
++ * issue and define a real DLT_IRDA...
++ * Jean II
++ */
++#define DLT_LINUX_IRDA		144
++
++/*
++ * Reserved for IBM SP switch and IBM Next Federation switch.
++ */
++#define DLT_IBM_SP		145
++#define DLT_IBM_SN		146
++
++/*
++ * Reserved for private use.  If you have some link-layer header type
++ * that you want to use within your organization, with the capture files
++ * using that link-layer header type not ever be sent outside your
++ * organization, you can use these values.
++ *
++ * No libpcap release will use these for any purpose, nor will any
++ * tcpdump release use them, either.
++ *
++ * Do *NOT* use these in capture files that you expect anybody not using
++ * your private versions of capture-file-reading tools to read; in
++ * particular, do *NOT* use them in products, otherwise you may find that
++ * people won't be able to use tcpdump, or snort, or Ethereal, or... to
++ * read capture files from your firewall/intrusion detection/traffic
++ * monitoring/etc. appliance, or whatever product uses that DLT_ value,
++ * and you may also find that the developers of those applications will
++ * not accept patches to let them read those files.
++ *
++ * Also, do not use them if somebody might send you a capture using them
++ * for *their* private type and tools using them for *your* private type
++ * would have to read them.
++ *
++ * Instead, ask "tcpdump-workers@lists.tcpdump.org" for a new DLT_ value,
++ * as per the comment above, and use the type you're given.
++ */
++#define DLT_USER0		147
++#define DLT_USER1		148
++#define DLT_USER2		149
++#define DLT_USER3		150
++#define DLT_USER4		151
++#define DLT_USER5		152
++#define DLT_USER6		153
++#define DLT_USER7		154
++#define DLT_USER8		155
++#define DLT_USER9		156
++#define DLT_USER10		157
++#define DLT_USER11		158
++#define DLT_USER12		159
++#define DLT_USER13		160
++#define DLT_USER14		161
++#define DLT_USER15		162
++
++/*
++ * For future use with 802.11 captures - defined by AbsoluteValue
++ * Systems to store a number of bits of link-layer information
++ * including radio information:
++ *
++ *	http://www.shaftnet.org/~pizza/software/capturefrm.txt
++ *
++ * but it might be used by some non-AVS drivers now or in the
++ * future.
++ */
++#define DLT_IEEE802_11_RADIO_AVS 163	/* 802.11 plus AVS radio header */
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>.  The DLT_s are used
++ * for passing on chassis-internal metainformation such as
++ * QOS profiles, etc..
++ */
++#define DLT_JUNIPER_MONITOR     164
++
++/*
++ * Reserved for BACnet MS/TP.
++ */
++#define DLT_BACNET_MS_TP	165
++
++/*
++ * Another PPP variant as per request from Karsten Keil <kkeil@suse.de>.
++ *
++ * This is used in some OSes to allow a kernel socket filter to distinguish
++ * between incoming and outgoing packets, on a socket intended to
++ * supply pppd with outgoing packets so it can do dial-on-demand and
++ * hangup-on-lack-of-demand; incoming packets are filtered out so they
++ * don't cause pppd to hold the connection up (you don't want random
++ * input packets such as port scans, packets from old lost connections,
++ * etc. to force the connection to stay up).
++ *
++ * The first byte of the PPP header (0xff03) is modified to accomodate
++ * the direction - 0x00 = IN, 0x01 = OUT.
++ */
++#define DLT_PPP_PPPD		166
++
++/*
++ * Names for backwards compatibility with older versions of some PPP
++ * software; new software should use DLT_PPP_PPPD.
++ */
++#define DLT_PPP_WITH_DIRECTION	DLT_PPP_PPPD
++#define DLT_LINUX_PPP_WITHDIRECTION	DLT_PPP_PPPD
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>.  The DLT_s are used
++ * for passing on chassis-internal metainformation such as
++ * QOS profiles, cookies, etc..
++ */
++#define DLT_JUNIPER_PPPOE       167
++#define DLT_JUNIPER_PPPOE_ATM   168
++
++#define DLT_GPRS_LLC		169	/* GPRS LLC */
++#define DLT_GPF_T		170	/* GPF-T (ITU-T G.7041/Y.1303) */
++#define DLT_GPF_F		171	/* GPF-F (ITU-T G.7041/Y.1303) */
++
++/*
++ * Requested by Oolan Zimmer <oz@gcom.com> for use in Gcom's T1/E1 line
++ * monitoring equipment.
++ */
++#define DLT_GCOM_T1E1		172
++#define DLT_GCOM_SERIAL		173
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>.  The DLT_ is used
++ * for internal communication to Physical Interface Cards (PIC)
++ */
++#define DLT_JUNIPER_PIC_PEER    174
++
++/*
++ * Link types requested by Gregor Maier <gregor@endace.com> of Endace
++ * Measurement Systems.  They add an ERF header (see
++ * http://www.endace.com/support/EndaceRecordFormat.pdf) in front of
++ * the link-layer header.
++ */
++#define DLT_ERF_ETH		175	/* Ethernet */
++#define DLT_ERF_POS		176	/* Packet-over-SONET */
++
++/*
++ * Requested by Daniele Orlandi <daniele@orlandi.com> for raw LAPD
++ * for vISDN (http://www.orlandi.com/visdn/).  Its link-layer header
++ * includes additional information before the LAPD header, so it's
++ * not necessarily a generic LAPD header.
++ */
++#define DLT_LINUX_LAPD		177
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>. 
++ * The DLT_ are used for prepending meta-information
++ * like interface index, interface name
++ * before standard Ethernet, PPP, Frelay & C-HDLC Frames
++ */
++#define DLT_JUNIPER_ETHER       178
++#define DLT_JUNIPER_PPP         179
++#define DLT_JUNIPER_FRELAY      180
++#define DLT_JUNIPER_CHDLC       181
++
++/*
++ * Multi Link Frame Relay (FRF.16)
++ */
++#define DLT_MFR                 182
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>. 
++ * The DLT_ is used for internal communication with a
++ * voice Adapter Card (PIC)
++ */
++#define DLT_JUNIPER_VP          183
++
++/*
++ * Arinc 429 frames.
++ * DLT_ requested by Gianluca Varenni <gianluca.varenni@cacetech.com>.
++ * Every frame contains a 32bit A429 label.
++ * More documentation on Arinc 429 can be found at
++ * http://www.condoreng.com/support/downloads/tutorials/ARINCTutorial.pdf
++ */
++#define DLT_A429                184
++
++/*
++ * Arinc 653 Interpartition Communication messages.
++ * DLT_ requested by Gianluca Varenni <gianluca.varenni@cacetech.com>.
++ * Please refer to the A653-1 standard for more information.
++ */
++#define DLT_A653_ICM            185
++
++/*
++ * USB packets, beginning with a USB setup header; requested by
++ * Paolo Abeni <paolo.abeni@email.it>.
++ */
++#define DLT_USB			186
++
++/*
++ * Bluetooth HCI UART transport layer (part H:4); requested by
++ * Paolo Abeni.
++ */
++#define DLT_BLUETOOTH_HCI_H4	187
++
++/*
++ * IEEE 802.16 MAC Common Part Sublayer; requested by Maria Cruz
++ * <cruz_petagay@bah.com>.
++ */
++#define DLT_IEEE802_16_MAC_CPS	188
++
++/*
++ * USB packets, beginning with a Linux USB header; requested by
++ * Paolo Abeni <paolo.abeni@email.it>.
++ */
++#define DLT_USB_LINUX		189
++
++/*
++ * Controller Area Network (CAN) v. 2.0B packets.
++ * DLT_ requested by Gianluca Varenni <gianluca.varenni@cacetech.com>.
++ * Used to dump CAN packets coming from a CAN Vector board.
++ * More documentation on the CAN v2.0B frames can be found at
++ * http://www.can-cia.org/downloads/?269
++ */
++#define DLT_CAN20B              190
++
++/*
++ * IEEE 802.15.4, with address fields padded, as is done by Linux
++ * drivers; requested by Juergen Schimmer.
++ */
++#define DLT_IEEE802_15_4_LINUX	191
++
++/*
++ * Per Packet Information encapsulated packets.
++ * DLT_ requested by Gianluca Varenni <gianluca.varenni@cacetech.com>.
++ */
++#define DLT_PPI			192
++
++/*
++ * Header for 802.16 MAC Common Part Sublayer plus a radiotap radio header;
++ * requested by Charles Clancy.
++ */
++#define DLT_IEEE802_16_MAC_CPS_RADIO	193
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>. 
++ * The DLT_ is used for internal communication with a
++ * integrated service module (ISM).
++ */
++#define DLT_JUNIPER_ISM         194
++
++/*
++ * IEEE 802.15.4, exactly as it appears in the spec (no padding, no
++ * nothing); requested by Mikko Saarnivala <mikko.saarnivala@sensinode.com>.
++ */
++#define DLT_IEEE802_15_4	195
++
++/*
++ * Various link-layer types, with a pseudo-header, for SITA
++ * (http://www.sita.aero/); requested by Fulko Hew (fulko.hew@gmail.com).
++ */
++#define DLT_SITA		196
++
++/*
++ * Various link-layer types, with a pseudo-header, for Endace DAG cards;
++ * encapsulates Endace ERF records.  Requested by Stephen Donnelly
++ * <stephen@endace.com>.
++ */
++#define DLT_ERF			197
++
++/*
++ * Special header prepended to Ethernet packets when capturing from a
++ * u10 Networks board.  Requested by Phil Mulholland
++ * <phil@u10networks.com>.
++ */
++#define DLT_RAIF1		198
++
++/*
++ * IPMB packet for IPMI, beginning with the I2C slave address, followed
++ * by the netFn and LUN, etc..  Requested by Chanthy Toeung
++ * <chanthy.toeung@ca.kontron.com>.
++ */
++#define DLT_IPMB		199
++
++/*
++ * Juniper-private data link type, as per request from
++ * Hannes Gredler <hannes@juniper.net>. 
++ * The DLT_ is used for capturing data on a secure tunnel interface.
++ */
++#define DLT_JUNIPER_ST          200
++
++/*
++ * Bluetooth HCI UART transport layer (part H:4), with pseudo-header
++ * that includes direction information; requested by Paolo Abeni.
++ */
++#define DLT_BLUETOOTH_HCI_H4_WITH_PHDR	201
++
++/*
++ * AX.25 packet with a 1-byte KISS header; see
++ *
++ *	http://www.ax25.net/kiss.htm
++ *
++ * as per Richard Stearn <richard@rns-stearn.demon.co.uk>.
++ */
++#define DLT_AX25_KISS		202
++
++/*
++ * LAPD packets from an ISDN channel, starting with the address field,
++ * with no pseudo-header.
++ * Requested by Varuna De Silva <varunax@gmail.com>.
++ */
++#define DLT_LAPD		203
++
++/*
++ * Variants of various link-layer headers, with a one-byte direction
++ * pseudo-header prepended - zero means "received by this host",
++ * non-zero (any non-zero value) means "sent by this host" - as per
++ * Will Barker <w.barker@zen.co.uk>.
++ */
++#define DLT_PPP_WITH_DIR	204	/* PPP - don't confuse with DLT_PPP_WITH_DIRECTION */
++#define DLT_C_HDLC_WITH_DIR	205	/* Cisco HDLC */
++#define DLT_FRELAY_WITH_DIR	206	/* Frame Relay */
++#define DLT_LAPB_WITH_DIR	207	/* LAPB */
++
++/*
++ * 208 is reserved for an as-yet-unspecified proprietary link-layer
++ * type, as requested by Will Barker.
++ */
++
++/*
++ * IPMB with a Linux-specific pseudo-header; as requested by Alexey Neyman
++ * <avn@pigeonpoint.com>.
++ */
++#define DLT_IPMB_LINUX		209
++
++/*
++ * FlexRay automotive bus - http://www.flexray.com/ - as requested
++ * by Hannes Kaelber <hannes.kaelber@x2e.de>.
++ */
++#define DLT_FLEXRAY		210
++
++/*
++ * Media Oriented Systems Transport (MOST) bus for multimedia
++ * transport - http://www.mostcooperation.com/ - as requested
++ * by Hannes Kaelber <hannes.kaelber@x2e.de>.
++ */
++#define DLT_MOST		211
++
++/*
++ * Local Interconnect Network (LIN) bus for vehicle networks -
++ * http://www.lin-subbus.org/ - as requested by Hannes Kaelber
++ * <hannes.kaelber@x2e.de>.
++ */
++#define DLT_LIN			212
++
++/*
++ * X2E-private data link type used for serial line capture,
++ * as requested by Hannes Kaelber <hannes.kaelber@x2e.de>.
++ */
++#define DLT_X2E_SERIAL		213
++
++/*
++ * X2E-private data link type used for the Xoraya data logger
++ * family, as requested by Hannes Kaelber <hannes.kaelber@x2e.de>.
++ */
++#define DLT_X2E_XORAYA		214
++
++/*
++ * IEEE 802.15.4, exactly as it appears in the spec (no padding, no
++ * nothing), but with the PHY-level data for non-ASK PHYs (4 octets
++ * of 0 as preamble, one octet of SFD, one octet of frame length+
++ * reserved bit, and then the MAC-layer data, starting with the
++ * frame control field).
++ *
++ * Requested by Max Filippov <jcmvbkbc@gmail.com>.
++ */
++#define DLT_IEEE802_15_4_NONASK_PHY	215
++
++
++/*
++ * DLT and savefile link type values are split into a class and
++ * a member of that class.  A class value of 0 indicates a regular
++ * DLT_/LINKTYPE_ value.
++ */
++#define DLT_CLASS(x)		((x) & 0x03ff0000)
++
++/*
++ * NetBSD-specific generic "raw" link type.  The class value indicates
++ * that this is the generic raw type, and the lower 16 bits are the
++ * address family we're dealing with.  Those values are NetBSD-specific;
++ * do not assume that they correspond to AF_ values for your operating
++ * system.
++ */
++#define	DLT_CLASS_NETBSD_RAWAF	0x02240000
++#define	DLT_NETBSD_RAWAF(af)	(DLT_CLASS_NETBSD_RAWAF | (af))
++#define	DLT_NETBSD_RAWAF_AF(x)	((x) & 0x0000ffff)
++#define	DLT_IS_NETBSD_RAWAF(x)	(DLT_CLASS(x) == DLT_CLASS_NETBSD_RAWAF)
++
++
++/*
++ * The instruction encodings.
++ */
++/* instruction classes */
++#define BPF_CLASS(code) ((code) & 0x07)
++#define		BPF_LD		0x00
++#define		BPF_LDX		0x01
++#define		BPF_ST		0x02
++#define		BPF_STX		0x03
++#define		BPF_ALU		0x04
++#define		BPF_JMP		0x05
++#define		BPF_RET		0x06
++#define		BPF_MISC	0x07
++
++/* ld/ldx fields */
++#define BPF_SIZE(code)	((code) & 0x18)
++#define		BPF_W		0x00
++#define		BPF_H		0x08
++#define		BPF_B		0x10
++#define BPF_MODE(code)	((code) & 0xe0)
++#define		BPF_IMM 	0x00
++#define		BPF_ABS		0x20
++#define		BPF_IND		0x40
++#define		BPF_MEM		0x60
++#define		BPF_LEN		0x80
++#define		BPF_MSH		0xa0
++
++/* alu/jmp fields */
++#define BPF_OP(code)	((code) & 0xf0)
++#define		BPF_ADD		0x00
++#define		BPF_SUB		0x10
++#define		BPF_MUL		0x20
++#define		BPF_DIV		0x30
++#define		BPF_OR		0x40
++#define		BPF_AND		0x50
++#define		BPF_LSH		0x60
++#define		BPF_RSH		0x70
++#define		BPF_NEG		0x80
++#define		BPF_JA		0x00
++#define		BPF_JEQ		0x10
++#define		BPF_JGT		0x20
++#define		BPF_JGE		0x30
++#define		BPF_JSET	0x40
++#define BPF_SRC(code)	((code) & 0x08)
++#define		BPF_K		0x00
++#define		BPF_X		0x08
++
++/* ret - BPF_K and BPF_X also apply */
++#define BPF_RVAL(code)	((code) & 0x18)
++#define		BPF_A		0x10
++
++/* misc */
++#define BPF_MISCOP(code) ((code) & 0xf8)
++#define		BPF_TAX		0x00
++#define		BPF_TXA		0x80
++
++/*
++ * The instruction data structure.
++ */
++struct bpf_insn {
++	u_short	code;
++	u_char 	jt;
++	u_char 	jf;
++	bpf_u_int32 k;
++};
++
++/*
++ * Macros for insn array initializers.
++ */
++#define BPF_STMT(code, k) { (u_short)(code), 0, 0, k }
++#define BPF_JUMP(code, k, jt, jf) { (u_short)(code), jt, jf, k }
++
++#if __STDC__ || defined(__cplusplus)
++extern int bpf_validate(const struct bpf_insn *, int);
++extern u_int bpf_filter(const struct bpf_insn *, const u_char *, u_int, u_int);
++#else
++extern int bpf_validate();
++extern u_int bpf_filter();
++#endif
++
++/*
++ * Number of scratch memory words (for BPF_LD|BPF_MEM and BPF_ST).
++ */
++#define BPF_MEMWORDS 16
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/pcap/namedb.h b/externals/3rdparty/winpcap/Include/pcap/namedb.h
+new file mode 100644
+index 0000000..9002c75
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/namedb.h
+@@ -0,0 +1,89 @@
++/*
++ * Copyright (c) 1994, 1996
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the Computer Systems
++ *	Engineering Group at Lawrence Berkeley Laboratory.
++ * 4. Neither the name of the University nor of the Laboratory may be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/namedb.h,v 1.1 2006/10/04 18:09:22 guy Exp $ (LBL)
++ */
++
++#ifndef lib_pcap_namedb_h
++#define lib_pcap_namedb_h
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/*
++ * As returned by the pcap_next_etherent()
++ * XXX this stuff doesn't belong in this interface, but this
++ * library already must do name to address translation, so
++ * on systems that don't have support for /etc/ethers, we
++ * export these hooks since they'll
++ */
++struct pcap_etherent {
++	u_char addr[6];
++	char name[122];
++};
++#ifndef PCAP_ETHERS_FILE
++#define PCAP_ETHERS_FILE "/etc/ethers"
++#endif
++struct	pcap_etherent *pcap_next_etherent(FILE *);
++u_char *pcap_ether_hostton(const char*);
++u_char *pcap_ether_aton(const char *);
++
++bpf_u_int32 **pcap_nametoaddr(const char *);
++#ifdef INET6
++struct addrinfo *pcap_nametoaddrinfo(const char *);
++#endif
++bpf_u_int32 pcap_nametonetaddr(const char *);
++
++int	pcap_nametoport(const char *, int *, int *);
++int	pcap_nametoportrange(const char *, int *, int *, int *);
++int	pcap_nametoproto(const char *);
++int	pcap_nametoeproto(const char *);
++int	pcap_nametollc(const char *);
++/*
++ * If a protocol is unknown, PROTO_UNDEF is returned.
++ * Also, pcap_nametoport() returns the protocol along with the port number.
++ * If there are ambiguous entried in /etc/services (i.e. domain
++ * can be either tcp or udp) PROTO_UNDEF is returned.
++ */
++#define PROTO_UNDEF		-1
++
++/* XXX move these to pcap-int.h? */
++int __pcap_atodn(const char *, bpf_u_int32 *);
++int __pcap_atoin(const char *, bpf_u_int32 *);
++u_short	__pcap_nametodnaddr(const char *);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/pcap/pcap.h b/externals/3rdparty/winpcap/Include/pcap/pcap.h
+new file mode 100644
+index 0000000..ad8fc40
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/pcap.h
+@@ -0,0 +1,407 @@
++/* -*- Mode: c; tab-width: 8; indent-tabs-mode: 1; c-basic-offset: 8; -*- */
++/*
++ * Copyright (c) 1993, 1994, 1995, 1996, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the Computer Systems
++ *	Engineering Group at Lawrence Berkeley Laboratory.
++ * 4. Neither the name of the University nor of the Laboratory may be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/pcap.h,v 1.4.2.11 2008-10-06 15:38:39 gianluca Exp $ (LBL)
++ */
++
++#ifndef lib_pcap_pcap_h
++#define lib_pcap_pcap_h
++
++#if defined(WIN32)
++  #include <pcap-stdinc.h>
++#elif defined(MSDOS)
++  #include <sys/types.h>
++  #include <sys/socket.h>  /* u_int, u_char etc. */
++#else /* UN*X */
++  #include <sys/types.h>
++  #include <sys/time.h>
++#endif /* WIN32/MSDOS/UN*X */
++
++#ifndef PCAP_DONT_INCLUDE_PCAP_BPF_H
++#include <pcap/bpf.h>
++#endif
++
++#include <stdio.h>
++
++#ifdef HAVE_REMOTE
++	// We have to define the SOCKET here, although it has been defined in sockutils.h
++	// This is to avoid the distribution of the 'sockutils.h' file around
++	// (for example in the WinPcap developer's pack)
++	#ifndef SOCKET
++		#ifdef WIN32
++			#define SOCKET unsigned int
++		#else
++			#define SOCKET int
++		#endif
++	#endif
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define PCAP_VERSION_MAJOR 2
++#define PCAP_VERSION_MINOR 4
++
++#define PCAP_ERRBUF_SIZE 256
++
++/*
++ * Compatibility for systems that have a bpf.h that
++ * predates the bpf typedefs for 64-bit support.
++ */
++#if BPF_RELEASE - 0 < 199406
++typedef	int bpf_int32;
++typedef	u_int bpf_u_int32;
++#endif
++
++typedef struct pcap pcap_t;
++typedef struct pcap_dumper pcap_dumper_t;
++typedef struct pcap_if pcap_if_t;
++typedef struct pcap_addr pcap_addr_t;
++
++/*
++ * The first record in the file contains saved values for some
++ * of the flags used in the printout phases of tcpdump.
++ * Many fields here are 32 bit ints so compilers won't insert unwanted
++ * padding; these files need to be interchangeable across architectures.
++ *
++ * Do not change the layout of this structure, in any way (this includes
++ * changes that only affect the length of fields in this structure).
++ *
++ * Also, do not change the interpretation of any of the members of this
++ * structure, in any way (this includes using values other than
++ * LINKTYPE_ values, as defined in "savefile.c", in the "linktype"
++ * field).
++ *
++ * Instead:
++ *
++ *	introduce a new structure for the new format, if the layout
++ *	of the structure changed;
++ *
++ *	send mail to "tcpdump-workers@lists.tcpdump.org", requesting
++ *	a new magic number for your new capture file format, and, when
++ *	you get the new magic number, put it in "savefile.c";
++ *
++ *	use that magic number for save files with the changed file
++ *	header;
++ *
++ *	make the code in "savefile.c" capable of reading files with
++ *	the old file header as well as files with the new file header
++ *	(using the magic number to determine the header format).
++ *
++ * Then supply the changes as a patch at
++ *
++ *	http://sourceforge.net/projects/libpcap/
++ *
++ * so that future versions of libpcap and programs that use it (such as
++ * tcpdump) will be able to read your new capture file format.
++ */
++struct pcap_file_header {
++	bpf_u_int32 magic;
++	u_short version_major;
++	u_short version_minor;
++	bpf_int32 thiszone;	/* gmt to local correction */
++	bpf_u_int32 sigfigs;	/* accuracy of timestamps */
++	bpf_u_int32 snaplen;	/* max length saved portion of each pkt */
++	bpf_u_int32 linktype;	/* data link type (LINKTYPE_*) */
++};
++
++/*
++ * Macros for the value returned by pcap_datalink_ext().
++ * 
++ * If LT_FCS_LENGTH_PRESENT(x) is true, the LT_FCS_LENGTH(x) macro
++ * gives the FCS length of packets in the capture.
++ */
++#define LT_FCS_LENGTH_PRESENT(x)	((x) & 0x04000000)
++#define LT_FCS_LENGTH(x)		(((x) & 0xF0000000) >> 28)
++#define LT_FCS_DATALINK_EXT(x)		((((x) & 0xF) << 28) | 0x04000000)
++
++typedef enum {
++       PCAP_D_INOUT = 0,
++       PCAP_D_IN,
++       PCAP_D_OUT
++} pcap_direction_t;
++
++/*
++ * Generic per-packet information, as supplied by libpcap.
++ *
++ * The time stamp can and should be a "struct timeval", regardless of
++ * whether your system supports 32-bit tv_sec in "struct timeval",
++ * 64-bit tv_sec in "struct timeval", or both if it supports both 32-bit
++ * and 64-bit applications.  The on-disk format of savefiles uses 32-bit
++ * tv_sec (and tv_usec); this structure is irrelevant to that.  32-bit
++ * and 64-bit versions of libpcap, even if they're on the same platform,
++ * should supply the appropriate version of "struct timeval", even if
++ * that's not what the underlying packet capture mechanism supplies.
++ */
++struct pcap_pkthdr {
++	struct timeval ts;	/* time stamp */
++	bpf_u_int32 caplen;	/* length of portion present */
++	bpf_u_int32 len;	/* length this packet (off wire) */
++};
++
++/*
++ * As returned by the pcap_stats()
++ */
++struct pcap_stat {
++	u_int ps_recv;		/* number of packets received */
++	u_int ps_drop;		/* number of packets dropped */
++	u_int ps_ifdrop;	/* drops by interface XXX not yet supported */
++#ifdef HAVE_REMOTE
++	u_int ps_capt;		/* number of packets that are received by the application; please get rid off the Win32 ifdef */
++	u_int ps_sent;		/* number of packets sent by the server on the network */
++	u_int ps_netdrop;	/* number of packets lost on the network */
++#endif /* HAVE_REMOTE */
++};
++
++#ifdef MSDOS
++/*
++ * As returned by the pcap_stats_ex()
++ */
++struct pcap_stat_ex {
++       u_long  rx_packets;        /* total packets received       */
++       u_long  tx_packets;        /* total packets transmitted    */
++       u_long  rx_bytes;          /* total bytes received         */
++       u_long  tx_bytes;          /* total bytes transmitted      */
++       u_long  rx_errors;         /* bad packets received         */
++       u_long  tx_errors;         /* packet transmit problems     */
++       u_long  rx_dropped;        /* no space in Rx buffers       */
++       u_long  tx_dropped;        /* no space available for Tx    */
++       u_long  multicast;         /* multicast packets received   */
++       u_long  collisions;
++
++       /* detailed rx_errors: */
++       u_long  rx_length_errors;
++       u_long  rx_over_errors;    /* receiver ring buff overflow  */
++       u_long  rx_crc_errors;     /* recv'd pkt with crc error    */
++       u_long  rx_frame_errors;   /* recv'd frame alignment error */
++       u_long  rx_fifo_errors;    /* recv'r fifo overrun          */
++       u_long  rx_missed_errors;  /* recv'r missed packet         */
++
++       /* detailed tx_errors */
++       u_long  tx_aborted_errors;
++       u_long  tx_carrier_errors;
++       u_long  tx_fifo_errors;
++       u_long  tx_heartbeat_errors;
++       u_long  tx_window_errors;
++     };
++#endif
++
++/*
++ * Item in a list of interfaces.
++ */
++struct pcap_if {
++	struct pcap_if *next;
++	char *name;		/* name to hand to "pcap_open_live()" */
++	char *description;	/* textual description of interface, or NULL */
++	struct pcap_addr *addresses;
++	bpf_u_int32 flags;	/* PCAP_IF_ interface flags */
++};
++
++#define PCAP_IF_LOOPBACK	0x00000001	/* interface is loopback */
++
++/*
++ * Representation of an interface address.
++ */
++struct pcap_addr {
++	struct pcap_addr *next;
++	struct sockaddr *addr;		/* address */
++	struct sockaddr *netmask;	/* netmask for that address */
++	struct sockaddr *broadaddr;	/* broadcast address for that address */
++	struct sockaddr *dstaddr;	/* P2P destination address for that address */
++};
++
++typedef void (*pcap_handler)(u_char *, const struct pcap_pkthdr *,
++			     const u_char *);
++
++/*
++ * Error codes for the pcap API.
++ * These will all be negative, so you can check for the success or
++ * failure of a call that returns these codes by checking for a
++ * negative value.
++ */
++#define PCAP_ERROR			-1	/* generic error code */
++#define PCAP_ERROR_BREAK		-2	/* loop terminated by pcap_breakloop */
++#define PCAP_ERROR_NOT_ACTIVATED	-3	/* the capture needs to be activated */
++#define PCAP_ERROR_ACTIVATED		-4	/* the operation can't be performed on already activated captures */
++#define PCAP_ERROR_NO_SUCH_DEVICE	-5	/* no such device exists */
++#define PCAP_ERROR_RFMON_NOTSUP		-6	/* this device doesn't support rfmon (monitor) mode */
++#define PCAP_ERROR_NOT_RFMON		-7	/* operation supported only in monitor mode */
++#define PCAP_ERROR_PERM_DENIED		-8	/* no permission to open the device */
++#define PCAP_ERROR_IFACE_NOT_UP		-9	/* interface isn't up */
++
++/*
++ * Warning codes for the pcap API.
++ * These will all be positive and non-zero, so they won't look like
++ * errors.
++ */
++#define PCAP_WARNING			1	/* generic warning code */
++#define PCAP_WARNING_PROMISC_NOTSUP	2	/* this device doesn't support promiscuous mode */
++
++char	*pcap_lookupdev(char *);
++int	pcap_lookupnet(const char *, bpf_u_int32 *, bpf_u_int32 *, char *);
++
++pcap_t	*pcap_create(const char *, char *);
++int	pcap_set_snaplen(pcap_t *, int);
++int	pcap_set_promisc(pcap_t *, int);
++int	pcap_can_set_rfmon(pcap_t *);
++int	pcap_set_rfmon(pcap_t *, int);
++int	pcap_set_timeout(pcap_t *, int);
++int	pcap_set_buffer_size(pcap_t *, int);
++int	pcap_activate(pcap_t *);
++
++pcap_t	*pcap_open_live(const char *, int, int, int, char *);
++pcap_t	*pcap_open_dead(int, int);
++pcap_t	*pcap_open_offline(const char *, char *);
++#if defined(WIN32)
++pcap_t  *pcap_hopen_offline(intptr_t, char *);
++#if !defined(LIBPCAP_EXPORTS)
++#define pcap_fopen_offline(f,b) \
++	pcap_hopen_offline(_get_osfhandle(_fileno(f)), b)
++#else /*LIBPCAP_EXPORTS*/
++static pcap_t *pcap_fopen_offline(FILE *, char *);
++#endif
++#else /*WIN32*/
++pcap_t	*pcap_fopen_offline(FILE *, char *);
++#endif /*WIN32*/
++
++void	pcap_close(pcap_t *);
++int	pcap_loop(pcap_t *, int, pcap_handler, u_char *);
++int	pcap_dispatch(pcap_t *, int, pcap_handler, u_char *);
++const u_char*
++	pcap_next(pcap_t *, struct pcap_pkthdr *);
++int 	pcap_next_ex(pcap_t *, struct pcap_pkthdr **, const u_char **);
++void	pcap_breakloop(pcap_t *);
++int	pcap_stats(pcap_t *, struct pcap_stat *);
++int	pcap_setfilter(pcap_t *, struct bpf_program *);
++int 	pcap_setdirection(pcap_t *, pcap_direction_t);
++int	pcap_getnonblock(pcap_t *, char *);
++int	pcap_setnonblock(pcap_t *, int, char *);
++int	pcap_inject(pcap_t *, const void *, size_t);
++int	pcap_sendpacket(pcap_t *, const u_char *, int);
++const char *pcap_statustostr(int);
++const char *pcap_strerror(int);
++char	*pcap_geterr(pcap_t *);
++void	pcap_perror(pcap_t *, char *);
++int	pcap_compile(pcap_t *, struct bpf_program *, const char *, int,
++	    bpf_u_int32);
++int	pcap_compile_nopcap(int, int, struct bpf_program *,
++	    const char *, int, bpf_u_int32);
++void	pcap_freecode(struct bpf_program *);
++int	pcap_offline_filter(struct bpf_program *, const struct pcap_pkthdr *,
++	    const u_char *);
++int	pcap_datalink(pcap_t *);
++int	pcap_datalink_ext(pcap_t *);
++int	pcap_list_datalinks(pcap_t *, int **);
++int	pcap_set_datalink(pcap_t *, int);
++void	pcap_free_datalinks(int *);
++int	pcap_datalink_name_to_val(const char *);
++const char *pcap_datalink_val_to_name(int);
++const char *pcap_datalink_val_to_description(int);
++int	pcap_snapshot(pcap_t *);
++int	pcap_is_swapped(pcap_t *);
++int	pcap_major_version(pcap_t *);
++int	pcap_minor_version(pcap_t *);
++
++/* XXX */
++FILE	*pcap_file(pcap_t *);
++int	pcap_fileno(pcap_t *);
++
++pcap_dumper_t *pcap_dump_open(pcap_t *, const char *);
++pcap_dumper_t *pcap_dump_fopen(pcap_t *, FILE *fp);
++FILE	*pcap_dump_file(pcap_dumper_t *);
++long	pcap_dump_ftell(pcap_dumper_t *);
++int	pcap_dump_flush(pcap_dumper_t *);
++void	pcap_dump_close(pcap_dumper_t *);
++void	pcap_dump(u_char *, const struct pcap_pkthdr *, const u_char *);
++
++int	pcap_findalldevs(pcap_if_t **, char *);
++void	pcap_freealldevs(pcap_if_t *);
++
++const char *pcap_lib_version(void);
++
++/* XXX this guy lives in the bpf tree */
++u_int	bpf_filter(const struct bpf_insn *, const u_char *, u_int, u_int);
++int	bpf_validate(const struct bpf_insn *f, int len);
++char	*bpf_image(const struct bpf_insn *, int);
++void	bpf_dump(const struct bpf_program *, int);
++
++#if defined(WIN32)
++
++/*
++ * Win32 definitions
++ */
++
++int pcap_setbuff(pcap_t *p, int dim);
++int pcap_setmode(pcap_t *p, int mode);
++int pcap_setmintocopy(pcap_t *p, int size);
++
++#ifdef WPCAP
++/* Include file with the wpcap-specific extensions */
++#include <Win32-Extensions.h>
++#endif /* WPCAP */
++
++#define MODE_CAPT 0
++#define MODE_STAT 1
++#define MODE_MON 2
++
++#elif defined(MSDOS)
++
++/*
++ * MS-DOS definitions
++ */
++
++int  pcap_stats_ex (pcap_t *, struct pcap_stat_ex *);
++void pcap_set_wait (pcap_t *p, void (*yield)(void), int wait);
++u_long pcap_mac_packets (void);
++
++#else /* UN*X */
++
++/*
++ * UN*X definitions
++ */
++
++int	pcap_get_selectable_fd(pcap_t *);
++
++#endif /* WIN32/MSDOS/UN*X */
++
++#ifdef HAVE_REMOTE
++/* Includes most of the public stuff that is needed for the remote capture */
++#include <remote-ext.h>
++#endif	 /* HAVE_REMOTE */
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/pcap/sll.h b/externals/3rdparty/winpcap/Include/pcap/sll.h
+new file mode 100644
+index 0000000..e9d5452
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/sll.h
+@@ -0,0 +1,129 @@
++/*-
++ * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * This code is derived from the Stanford/CMU enet packet filter,
++ * (net/enet.c) distributed as part of 4.3BSD, and code contributed
++ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence
++ * Berkeley Laboratory.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *      This product includes software developed by the University of
++ *      California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/sll.h,v 1.2.2.1 2008-05-30 01:36:06 guy Exp $ (LBL)
++ */
++
++/*
++ * For captures on Linux cooked sockets, we construct a fake header
++ * that includes:
++ *
++ *	a 2-byte "packet type" which is one of:
++ *
++ *		LINUX_SLL_HOST		packet was sent to us
++ *		LINUX_SLL_BROADCAST	packet was broadcast
++ *		LINUX_SLL_MULTICAST	packet was multicast
++ *		LINUX_SLL_OTHERHOST	packet was sent to somebody else
++ *		LINUX_SLL_OUTGOING	packet was sent *by* us;
++ *
++ *	a 2-byte Ethernet protocol field;
++ *
++ *	a 2-byte link-layer type;
++ *
++ *	a 2-byte link-layer address length;
++ *
++ *	an 8-byte source link-layer address, whose actual length is
++ *	specified by the previous value.
++ *
++ * All fields except for the link-layer address are in network byte order.
++ *
++ * DO NOT change the layout of this structure, or change any of the
++ * LINUX_SLL_ values below.  If you must change the link-layer header
++ * for a "cooked" Linux capture, introduce a new DLT_ type (ask
++ * "tcpdump-workers@lists.tcpdump.org" for one, so that you don't give it
++ * a value that collides with a value already being used), and use the
++ * new header in captures of that type, so that programs that can
++ * handle DLT_LINUX_SLL captures will continue to handle them correctly
++ * without any change, and so that capture files with different headers
++ * can be told apart and programs that read them can dissect the
++ * packets in them.
++ */
++
++#ifndef lib_pcap_sll_h
++#define lib_pcap_sll_h
++
++/*
++ * A DLT_LINUX_SLL fake link-layer header.
++ */
++#define SLL_HDR_LEN	16		/* total header length */
++#define SLL_ADDRLEN	8		/* length of address field */
++
++struct sll_header {
++	u_int16_t sll_pkttype;		/* packet type */
++	u_int16_t sll_hatype;		/* link-layer address type */
++	u_int16_t sll_halen;		/* link-layer address length */
++	u_int8_t sll_addr[SLL_ADDRLEN];	/* link-layer address */
++	u_int16_t sll_protocol;		/* protocol */
++};
++
++/*
++ * The LINUX_SLL_ values for "sll_pkttype"; these correspond to the
++ * PACKET_ values on Linux, but are defined here so that they're
++ * available even on systems other than Linux, and so that they
++ * don't change even if the PACKET_ values change.
++ */
++#define LINUX_SLL_HOST		0
++#define LINUX_SLL_BROADCAST	1
++#define LINUX_SLL_MULTICAST	2
++#define LINUX_SLL_OTHERHOST	3
++#define LINUX_SLL_OUTGOING	4
++
++/*
++ * The LINUX_SLL_ values for "sll_protocol"; these correspond to the
++ * ETH_P_ values on Linux, but are defined here so that they're
++ * available even on systems other than Linux.  We assume, for now,
++ * that the ETH_P_ values won't change in Linux; if they do, then:
++ *
++ *	if we don't translate them in "pcap-linux.c", capture files
++ *	won't necessarily be readable if captured on a system that
++ *	defines ETH_P_ values that don't match these values;
++ *
++ *	if we do translate them in "pcap-linux.c", that makes life
++ *	unpleasant for the BPF code generator, as the values you test
++ *	for in the kernel aren't the values that you test for when
++ *	reading a capture file, so the fixup code run on BPF programs
++ *	handed to the kernel ends up having to do more work.
++ *
++ * Add other values here as necessary, for handling packet types that
++ * might show up on non-Ethernet, non-802.x networks.  (Not all the ones
++ * in the Linux "if_ether.h" will, I suspect, actually show up in
++ * captures.)
++ */
++#define LINUX_SLL_P_802_3	0x0001	/* Novell 802.3 frames without 802.2 LLC header */
++#define LINUX_SLL_P_802_2	0x0004	/* 802.2 frames (not D/I/X Ethernet) */
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/pcap/usb.h b/externals/3rdparty/winpcap/Include/pcap/usb.h
+new file mode 100644
+index 0000000..adcd19c
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/usb.h
+@@ -0,0 +1,90 @@
++/*
++ * Copyright (c) 2006 Paolo Abeni (Italy)
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ * notice, this list of conditions and the following disclaimer in the
++ * documentation and/or other materials provided with the distribution.
++ * 3. The name of the author may not be used to endorse or promote 
++ * products derived from this software without specific prior written 
++ * permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * Basic USB data struct
++ * By Paolo Abeni <paolo.abeni@email.it>
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/usb.h,v 1.6 2007/09/22 02:06:08 guy Exp $
++ */
++ 
++#ifndef _PCAP_USB_STRUCTS_H__
++#define _PCAP_USB_STRUCTS_H__
++
++/* 
++ * possible transfer mode
++ */
++#define URB_TRANSFER_IN   0x80
++#define URB_ISOCHRONOUS   0x0
++#define URB_INTERRUPT     0x1
++#define URB_CONTROL       0x2
++#define URB_BULK          0x3
++
++/*
++ * possible event type
++ */
++#define URB_SUBMIT        'S'
++#define URB_COMPLETE      'C'
++#define URB_ERROR         'E'
++
++/*
++ * USB setup header as defined in USB specification.
++ * Appears at the front of each packet in DLT_USB captures.
++ */
++typedef struct _usb_setup {
++	u_int8_t bmRequestType;
++	u_int8_t bRequest;
++	u_int16_t wValue;
++	u_int16_t wIndex;
++	u_int16_t wLength;
++} pcap_usb_setup;
++
++
++/*
++ * Header prepended by linux kernel to each event.
++ * Appears at the front of each packet in DLT_USB_LINUX captures.
++ */
++typedef struct _usb_header {
++	u_int64_t id;
++	u_int8_t event_type;
++	u_int8_t transfer_type;
++	u_int8_t endpoint_number;
++	u_int8_t device_address;
++	u_int16_t bus_id;
++	char setup_flag;/*if !=0 the urb setup header is not present*/
++	char data_flag; /*if !=0 no urb data is present*/
++	int64_t ts_sec;
++	int32_t ts_usec;
++	int32_t status;
++	u_int32_t urb_len;
++	u_int32_t data_len; /* amount of urb data really present in this event*/
++	pcap_usb_setup setup;
++} pcap_usb_header;
++
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/pcap/vlan.h b/externals/3rdparty/winpcap/Include/pcap/vlan.h
+new file mode 100644
+index 0000000..b0cb794
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/pcap/vlan.h
+@@ -0,0 +1,46 @@
++/*-
++ * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *      This product includes software developed by the University of
++ *      California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * @(#) $Header: /tcpdump/master/libpcap/pcap/vlan.h,v 1.1.2.2 2008-08-06 07:45:59 guy Exp $
++ */
++
++#ifndef lib_pcap_vlan_h
++#define lib_pcap_vlan_h
++
++struct vlan_tag {
++	u_int16_t	vlan_tpid;		/* ETH_P_8021Q */
++	u_int16_t	vlan_tci;		/* VLAN TCI */
++};
++
++#define VLAN_TAG_LEN	4
++
++#endif
+diff --git a/externals/3rdparty/winpcap/Include/remote-ext.h b/externals/3rdparty/winpcap/Include/remote-ext.h
+new file mode 100644
+index 0000000..35a2fff
+--- /dev/null
++++ b/externals/3rdparty/winpcap/Include/remote-ext.h
+@@ -0,0 +1,444 @@
++/*
++ * Copyright (c) 2002 - 2003
++ * NetGroup, Politecnico di Torino (Italy)
++ * All rights reserved.
++ * 
++ * Redistribution and use in source and binary forms, with or without 
++ * modification, are permitted provided that the following conditions 
++ * are met:
++ * 
++ * 1. Redistributions of source code must retain the above copyright 
++ * notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright 
++ * notice, this list of conditions and the following disclaimer in the 
++ * documentation and/or other materials provided with the distribution. 
++ * 3. Neither the name of the Politecnico di Torino nor the names of its 
++ * contributors may be used to endorse or promote products derived from 
++ * this software without specific prior written permission. 
++ * 
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ * 
++ */
++
++
++#ifndef __REMOTE_EXT_H__
++#define __REMOTE_EXT_H__
++
++
++#ifndef HAVE_REMOTE
++#error Please do not include this file directly. Just define HAVE_REMOTE and then include pcap.h
++#endif
++
++// Definition for Microsoft Visual Studio
++#if _MSC_VER > 1000
++#pragma once
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/*!
++	\file remote-ext.h
++
++	The goal of this file it to include most of the new definitions that should be
++	placed into the pcap.h file.
++
++	It includes all new definitions (structures and functions like pcap_open().
++    Some of the functions are not really a remote feature, but, right now, 
++	they are placed here.
++*/
++
++
++
++// All this stuff is public
++/*! \addtogroup remote_struct
++	\{
++*/
++
++
++
++
++/*!
++	\brief Defines the maximum buffer size in which address, port, interface names are kept.
++
++	In case the adapter name or such is larger than this value, it is truncated.
++	This is not used by the user; however it must be aware that an hostname / interface
++	name longer than this value will be truncated.
++*/
++#define PCAP_BUF_SIZE 1024
++
++
++/*! \addtogroup remote_source_ID
++	\{
++*/
++
++
++/*!
++	\brief Internal representation of the type of source in use (file, 
++	remote/local interface).
++
++	This indicates a file, i.e. the user want to open a capture from a local file.
++*/
++#define PCAP_SRC_FILE 2
++/*!
++	\brief Internal representation of the type of source in use (file, 
++	remote/local interface).
++
++	This indicates a local interface, i.e. the user want to open a capture from 
++	a local interface. This does not involve the RPCAP protocol.
++*/
++#define PCAP_SRC_IFLOCAL 3
++/*!
++	\brief Internal representation of the type of source in use (file, 
++	remote/local interface).
++
++	This indicates a remote interface, i.e. the user want to open a capture from 
++	an interface on a remote host. This does involve the RPCAP protocol.
++*/
++#define PCAP_SRC_IFREMOTE 4
++
++/*!
++	\}
++*/
++
++
++
++/*! \addtogroup remote_source_string
++
++	The formats allowed by the pcap_open() are the following:
++	- file://path_and_filename [opens a local file]
++	- rpcap://devicename [opens the selected device devices available on the local host, without using the RPCAP protocol]
++	- rpcap://host/devicename [opens the selected device available on a remote host]
++	- rpcap://host:port/devicename [opens the selected device available on a remote host, using a non-standard port for RPCAP]
++	- adaptername [to open a local adapter; kept for compability, but it is strongly discouraged]
++	- (NULL) [to open the first local adapter; kept for compability, but it is strongly discouraged]
++
++	The formats allowed by the pcap_findalldevs_ex() are the following:
++	- file://folder/ [lists all the files in the given folder]
++	- rpcap:// [lists all local adapters]
++	- rpcap://host:port/ [lists the devices available on a remote host]
++
++	Referring to the 'host' and 'port' paramters, they can be either numeric or literal. Since
++	IPv6 is fully supported, these are the allowed formats:
++
++	- host (literal): e.g. host.foo.bar
++	- host (numeric IPv4): e.g. 10.11.12.13
++	- host (numeric IPv4, IPv6 style): e.g. [10.11.12.13]
++	- host (numeric IPv6): e.g. [1:2:3::4]
++	- port: can be either numeric (e.g. '80') or literal (e.g. 'http')
++
++	Here you find some allowed examples:
++	- rpcap://host.foo.bar/devicename [everything literal, no port number]
++	- rpcap://host.foo.bar:1234/devicename [everything literal, with port number]
++	- rpcap://10.11.12.13/devicename [IPv4 numeric, no port number]
++	- rpcap://10.11.12.13:1234/devicename [IPv4 numeric, with port number]
++	- rpcap://[10.11.12.13]:1234/devicename [IPv4 numeric with IPv6 format, with port number]
++	- rpcap://[1:2:3::4]/devicename [IPv6 numeric, no port number]
++	- rpcap://[1:2:3::4]:1234/devicename [IPv6 numeric, with port number]
++	- rpcap://[1:2:3::4]:http/devicename [IPv6 numeric, with literal port number]
++	
++	\{
++*/
++
++
++/*!
++	\brief String that will be used to determine the type of source in use (file,
++	remote/local interface).
++
++	This string will be prepended to the interface name in order to create a string
++	that contains all the information required to open the source.
++
++	This string indicates that the user wants to open a capture from a local file.
++*/
++#define PCAP_SRC_FILE_STRING "file://"
++/*!
++	\brief String that will be used to determine the type of source in use (file,
++	remote/local interface).
++
++	This string will be prepended to the interface name in order to create a string
++	that contains all the information required to open the source.
++
++	This string indicates that the user wants to open a capture from a network interface.
++	This string does not necessarily involve the use of the RPCAP protocol. If the
++	interface required resides on the local host, the RPCAP protocol is not involved
++	and the local functions are used.
++*/
++#define PCAP_SRC_IF_STRING "rpcap://"
++
++/*!
++	\}
++*/
++
++
++
++
++
++/*!
++	\addtogroup remote_open_flags
++	\{
++*/
++
++/*!
++	\brief Defines if the adapter has to go in promiscuous mode.
++
++	It is '1' if you have to open the adapter in promiscuous mode, '0' otherwise.
++	Note that even if this parameter is false, the interface could well be in promiscuous
++	mode for some other reason (for example because another capture process with 
++	promiscuous mode enabled is currently using that interface).
++	On on Linux systems with 2.2 or later kernels (that have the "any" device), this
++	flag does not work on the "any" device; if an argument of "any" is supplied,
++	the 'promisc' flag is ignored.
++*/
++#define PCAP_OPENFLAG_PROMISCUOUS		1
++
++/*!
++	\brief Defines if the data trasfer (in case of a remote
++	capture) has to be done with UDP protocol.
++
++	If it is '1' if you want a UDP data connection, '0' if you want
++	a TCP data connection; control connection is always TCP-based.
++	A UDP connection is much lighter, but it does not guarantee that all
++	the captured packets arrive to the client workstation. Moreover, 
++	it could be harmful in case of network congestion.
++	This flag is meaningless if the source is not a remote interface.
++	In that case, it is simply ignored.
++*/
++#define PCAP_OPENFLAG_DATATX_UDP			2
++
++
++/*!
++	\brief Defines if the remote probe will capture its own generated traffic.
++
++	In case the remote probe uses the same interface to capture traffic and to send
++	data back to the caller, the captured traffic includes the RPCAP traffic as well.
++	If this flag is turned on, the RPCAP traffic is excluded from the capture, so that
++	the trace returned back to the collector is does not include this traffic.
++*/
++#define PCAP_OPENFLAG_NOCAPTURE_RPCAP	4
++
++/*!
++	\brief Defines if the local adapter will capture its own generated traffic.
++
++	This flag tells the underlying capture driver to drop the packets that were sent by itself. 
++	This is usefult when building applications like bridges, that should ignore the traffic
++	they just sent.
++*/
++#define PCAP_OPENFLAG_NOCAPTURE_LOCAL	8
++
++/*!
++	\brief This flag configures the adapter for maximum responsiveness.
++
++	In presence of a large value for nbytes, WinPcap waits for the arrival of several packets before 
++	copying the data to the user. This guarantees a low number of system calls, i.e. lower processor usage, 
++	i.e. better performance, which is good for applications like sniffers. If the user sets the 
++	PCAP_OPENFLAG_MAX_RESPONSIVENESS flag, the capture driver will copy the packets as soon as the application 
++	is ready to receive them. This is suggested for real time applications (like, for example, a bridge) 
++	that need the best responsiveness.*/
++#define PCAP_OPENFLAG_MAX_RESPONSIVENESS	16
++
++/*!
++	\}
++*/
++
++
++/*!
++	\addtogroup remote_samp_methods
++	\{
++*/
++
++/*!
++	\brief No sampling has to be done on the current capture.
++
++	In this case, no sampling algorithms are applied to the current capture.
++*/
++#define PCAP_SAMP_NOSAMP	0
++
++/*!
++	\brief It defines that only 1 out of N packets must be returned to the user.
++
++	In this case, the 'value' field of the 'pcap_samp' structure indicates the
++	number of packets (minus 1) that must be discarded before one packet got accepted.
++	In other words, if 'value = 10', the first packet is returned to the caller, while
++	the following 9 are discarded.
++*/
++#define PCAP_SAMP_1_EVERY_N	1
++
++/*!
++	\brief It defines that we have to return 1 packet every N milliseconds.
++
++	In this case, the 'value' field of the 'pcap_samp' structure indicates the 'waiting
++	time' in milliseconds before one packet got accepted.
++	In other words, if 'value = 10', the first packet is returned to the caller; the next 
++	returned one will be the first packet that arrives when 10ms have elapsed. 
++*/
++#define PCAP_SAMP_FIRST_AFTER_N_MS 2
++
++/*!
++	\}
++*/
++
++
++/*!
++	\addtogroup remote_auth_methods
++	\{
++*/
++
++/*!
++	\brief It defines the NULL authentication.
++
++	This value has to be used within the 'type' member of the pcap_rmtauth structure.
++	The 'NULL' authentication has to be equal to 'zero', so that old applications
++	can just put every field of struct pcap_rmtauth to zero, and it does work.
++*/
++#define RPCAP_RMTAUTH_NULL 0
++/*!
++	\brief It defines the username/password authentication.
++
++	With this type of authentication, the RPCAP protocol will use the username/
++	password provided to authenticate the user on the remote machine. If the
++	authentication is successful (and the user has the right to open network devices)
++	the RPCAP connection will continue; otherwise it will be dropped.
++
++	This value has to be used within the 'type' member of the pcap_rmtauth structure.
++*/
++#define RPCAP_RMTAUTH_PWD 1
++
++/*!
++	\}
++*/
++
++
++
++
++/*!
++
++	\brief This structure keeps the information needed to autheticate
++	the user on a remote machine.
++	
++	The remote machine can either grant or refuse the access according 
++	to the information provided.
++	In case the NULL authentication is required, both 'username' and
++	'password' can be NULL pointers.
++	
++	This structure is meaningless if the source is not a remote interface;
++	in that case, the functions which requires such a structure can accept
++	a NULL pointer as well.
++*/
++struct pcap_rmtauth
++{
++	/*!
++		\brief Type of the authentication required.
++
++		In order to provide maximum flexibility, we can support different types
++		of authentication based on the value of this 'type' variable. The currently 
++		supported authentication methods are defined into the
++		\link remote_auth_methods Remote Authentication Methods Section\endlink.
++
++	*/
++	int type;
++	/*!
++		\brief Zero-terminated string containing the username that has to be 
++		used on the remote machine for authentication.
++		
++		This field is meaningless in case of the RPCAP_RMTAUTH_NULL authentication
++		and it can be NULL.
++	*/
++	char *username;
++	/*!
++		\brief Zero-terminated string containing the password that has to be 
++		used on the remote machine for authentication.
++		
++		This field is meaningless in case of the RPCAP_RMTAUTH_NULL authentication
++		and it can be NULL.
++	*/
++	char *password;
++};
++
++
++/*!
++	\brief This structure defines the information related to sampling.
++
++	In case the sampling is requested, the capturing device should read
++	only a subset of the packets coming from the source. The returned packets depend
++	on the sampling parameters.
++
++	\warning The sampling process is applied <strong>after</strong> the filtering process.
++	In other words, packets are filtered first, then the sampling process selects a
++	subset of the 'filtered' packets and it returns them to the caller.
++*/
++struct pcap_samp
++{
++	/*!
++		Method used for sampling. Currently, the supported methods are listed in the
++		\link remote_samp_methods Sampling Methods Section\endlink.
++	*/
++	int method;
++
++	/*!
++		This value depends on the sampling method defined. For its meaning, please check
++		at the \link remote_samp_methods Sampling Methods Section\endlink.
++	*/
++	int value;
++};
++
++
++
++
++//! Maximum lenght of an host name (needed for the RPCAP active mode)
++#define RPCAP_HOSTLIST_SIZE 1024
++
++
++/*!
++	\}
++*/ // end of public documentation
++
++
++// Exported functions
++
++
++
++/** \name New WinPcap functions
++
++	This section lists the new functions that are able to help considerably in writing
++	WinPcap programs because of their easiness of use.
++ */
++//\{
++pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf);
++int pcap_createsrcstr(char *source, int type, const char *host, const char *port, const char *name, char *errbuf);
++int pcap_parsesrcstr(const char *source, int *type, char *host, char *port, char *name, char *errbuf);
++int pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
++struct pcap_samp *pcap_setsampling(pcap_t *p);
++
++//\}
++// End of new winpcap functions
++
++
++
++/** \name Remote Capture functions
++ */
++//\{ 
++SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);
++int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf);
++int pcap_remoteact_close(const char *host, char *errbuf);
++void pcap_remoteact_cleanup();
++//\}
++// End of remote capture functions
++
++#ifdef __cplusplus
++}
++#endif
++
++
++#endif
++
+diff --git a/externals/3rdparty/winpcap/Lib/Packet.lib b/externals/3rdparty/winpcap/Lib/Packet.lib
+new file mode 100644
+index 0000000000000000000000000000000000000000..81618bc8ca221dd99e52b0289ae4692a01f63d0b
+GIT binary patch
+literal 8450
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/externals/3rdparty/winpcap/Lib/libpacket.a b/externals/3rdparty/winpcap/Lib/libpacket.a
+new file mode 100644
+index 0000000000000000000000000000000000000000..4d49131f09675b3588d36e98512446248089a84e
+GIT binary patch
+literal 20814
+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
+RC&fIwQzZ*QF`0{@{{ikXj^zLV
+
+literal 0
+HcmV?d00001
+
+diff --git a/externals/3rdparty/winpcap/Lib/libwpcap.a b/externals/3rdparty/winpcap/Lib/libwpcap.a
+new file mode 100644
+index 0000000000000000000000000000000000000000..65b1870e7acaca2dadc3664353d69c9df35e7446
+GIT binary patch
+literal 54276
+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
+E01M8b=Kufz
+
+literal 0
+HcmV?d00001
+
+diff --git a/externals/3rdparty/winpcap/Lib/wpcap.lib b/externals/3rdparty/winpcap/Lib/wpcap.lib
+new file mode 100644
+index 0000000000000000000000000000000000000000..f832e0445b5c7dafe5a0f887262064265ba2b293
+GIT binary patch
+literal 19320
+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
+N*?W_a?2Af)@;}RMSJ?mn
+
+literal 0
+HcmV?d00001
+
+diff --git a/externals/3rdparty/winpcap/Lib/x64/Packet.lib b/externals/3rdparty/winpcap/Lib/x64/Packet.lib
+new file mode 100644
+index 0000000000000000000000000000000000000000..30c15405037e32d45233593bb67ac27f66c5f3de
+GIT binary patch
+literal 8290
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/externals/3rdparty/winpcap/Lib/x64/wpcap.lib b/externals/3rdparty/winpcap/Lib/x64/wpcap.lib
+new file mode 100644
+index 0000000000000000000000000000000000000000..d5559f802b8e81a51747a20aca72ae65139f8af2
+GIT binary patch
+literal 18892
+zcmdU0OKhA)5-uDFAwb9`JVOXhaNda%+hfOhJBjlm&V#&`jgW@%%<p)}cxHBHY*_ZN
+z5<&>A5NCuq?tv3xC4^R-P!0$og!X`Ph*m332ysA&6DQcOU)9zB{PXiq#vFE}^50!u
+z-CsYdySl5}>kkwf#o0s4clC$Aq2WDya^tztvEh)v+eULkBRLa%aXAtFlc@g|(T1Oi
+z1_p`tOk4UAU(kW)E#1TywDm1RxtE9(op{~Q_!yC*oim0Gp=d=XUof<P9g(8F3x-Y&
+z6KQ$}U(oRrh7P_<r06vADjIpu(AJ-T3)*(g&@k$vXgg#To&3Vk=p>P%aqtxFU1n%E
+zc$(hF7qsiPp+VF`(XOS2c7BEWg9d@CXtH7G#9FiyG%;Z5ZG08|V(3VnNYgj?g7%_(
+zMY%ph$3H~-K>L3%G_-<9(ePD6V{Z~^LL0|G8^1TS=_4Xd7w`pbe8bS`S@aKRGwP)2
+zTYMG0W@!K4fdkq;Xy_omiiTb_bf|>!0UiF>(g}P)hrTwnWr|4AzEhS^_kExfKN{M)
+z0pkH0TVv?xO(I1*`YfRhI}~BO6^(viXjdKm3>w*HXxrx)PtcZ63>`xqHNA^3XmY8c
+zqZd&=D0j=y<ZbXlL*FUN=TD!#aQ@=u{N(XV$1a|}aQXbj{LA%Xp-%byxhqps?aA~v
+zoo-SupSp7HOn&mn<s*<U&(-rPYraye-I%YJq6LaY+hnRyOUkIIkg3(9YQ9olh>VPn
+z#${?VGnH~xiaCyuELLhwD`J8o?RwOz)~eH$TJeU#k_;i&jLS)ekV6mDxnZg=xo=A4
+zX1&lV&YDz?35iBjD4A3p5-9+iZ$^#j`I(uhVMIcfkhL9<_oW3KAz6)Hv4fyPBBj|X
+zw3-%22jgk^=oOKyVp1Y%&6F!GQBxZgGWDp@sM)62ut;sT8X}!zLIT4C2~!6f7OBPB
+zT)kXzV{Rku>G^6+YrIxgo5%5l^h_g)inWq0j$=ZiRA?2ThgO9+CM25GLcKX#v;EC6
+zAyIDTn=cpY^~maghzqH?!b`PAej#c!%eAU$e#nxt<!YO3z!I_;A=f??iltO*21-dG
+zEK*DJnEPse8UY`T%ZN#+h1zDK=FU{+n{I}vl1)5TmWOJqiEoA}F4h)I8a0PZ0WKm+
+z2WyT8+C_r&YN=i*-f)XoGvatm>d*7he3UO#u&_9^YDqE^<x3HCz4n)Q4#!T+qYI7a
+zFw8{xR-;gD&Xt`eq6MZ}%on-Tx{!}rvr!|eilxG{gshr{3oOPlA)z|7Ty52gwK_LZ
+zaD=2@@JqZL`lyhZDOXGAUl<#^Qb~rC!|V;^1VhLvbCXwEWBSrZlVtMfHaAgO(lU+w
+zbbTgompu{mX$x2|uuw##QaR$&%X5Y6Ceeg^ims!|r2~flauWuuT*avRkV!#BVL9}`
+zh@eTsAh|RVwE60dTC0{XO;f}nlcHBkKjn2uq!eLzT2Zr6gese^3^+ovUT8D}LCFwu
+zVqn?s#CSrw5zW<FQK8t%7mCHGZq>Gpo0y|gZnnv5UZS*E(tPo4>zYi83e|b5U+rvz
+zQLe)HRw{Wl!07nvjlvuy@kEWxEVTyNMMS!@|5hE%_?eB9Q&Ay}S=ubj)nU%AyH&+A
+zgxoa7`G()__^6OkeV2FU&`#4BPe=oqg&Ep&grqAnUoFf<d8jESkjasll9UrUR7O=m
+zET>FK$%#d|*eKUqY=;@z79a&gIhFEsXul;x$Qc9HiYl&U+8*k-kixvp7s?Girn7}=
+z$yxCPzQ|=}q-nPei&V^=@`75Lbg3K@5^AKNoO9(STQ|>$$*H{#b`7R5mC-R`a;@@Q
+zRGVkB)XF<XOwMeA^Ud<Bwt}im$rSRl+H$xff$5}xC1g=dsoaRrcDJz#I6_kG09h@a
+z@d<g|dl+);VYr4f{H=bXpK(?k#Myaz57C#P=MNCw1iiJD=%pOd>o|LkjT6o6L<Tqx
+zUN}j#Za>k&UYw6{27L!~;yBT}2ayiPz<VP^KOyfmoFi`zgTI~V3*?y`MHuBQL%zw~
+zMDK%c??M?kS1!f(E0q5p!i`CywZI&hAbK103#fjC=o`>&<n2S9J_OzmsKbgOqN~7o
+za}1cE?>7>Cw29~f=naHtQJ=M&iM|EB2Kqbl45B`RsOzi9TS9w2K8*T<zD9Uz3w$2?
+zP(J8K)L{eKu?FSdJPO<$zyK|PK0sUQsPi_o^>eiI6XY8_hW3G$qW%{le+%`zjqrEC
+zfh&jZqCOg@QQAXew2uzZemYK<&|%ByF?yUXqHEXC6rH29^Z*Ue2HHr^&;?pgPg6e)
+z(F9$iVS0j|qep3w?xW{vEuE)lX@qigH{C<`(^IsLR?<#7K_}@UI!L=|Dcwtl>0x@1
+zj?g3>qocHiw$e7*PCMw2bcQa|6}n2B=ufnocF|^9PN!%EJxPC{RrCn${XeVi6715u
+z_BEL47Te{hs5N3fJ-$7{>T5PuMx<@i6W`9X?R<X2+9s`siN>#OC*V${Vkzl-=xkq>
+zJ8h$!-3bmu_COjKNP+9}D8s4DU<X?j7t_{K7UO&xlBc%Nv3S0%FN}4I9nTC?9|7Y9
+z%)||!mW}T{_3=++Rq^n=D)x=Cl7by`X2ceIS$Og}BFR6HZjF(ud>Nu>#nD^#kjI`X
+z!46HFNJ#b{bl7Zk-jwm_M%Is+!I4MXSMLH8burAClTYs*g-}L6hR6|jTZPBfm|$#N
+zW1C_j>{8-RxVW<Ejf6g=%FOJ!j5FOXMDRPDciR17@v8X4gFWMjLVa4XV$K^K5|vXl
+zF)4oH$>!w{MX3zNsgS{Qk(e*Z8IiKjQ%P>El5J9aw@(dlesdQZN^7T4$ntx|kRRA5
+zJtI&F@Ae3VwX-Q?CCzb^z(=xBT6l$Jf^#-XUPnJ}AY}cnhUa|=Y>0&kRzdHjV6!U>
+zt~a&9$R?TB@Sve%-lXcNIBPpIYWT*v>%6vxr#%qzbR)eHtS4I5#R5YarX-liL;-P>
+zbY{`Wu}?|cEYT8g1X<8}JViWq0@SOJPS(bbL*7N(*)8V1C*f(u6e7$SGrZe7!Gvik
+zYrHrdxByw1b#iE`G)ovM9hc_GGLk$9$)38vDVKB;B`=+<8zwY58WNK=?l#wkMkj_Q
+zMzE~=#TgH~3}^wz)2q1Qu*2LN5l)C-d^y9R1*FL^3~^E70lX1Nc7i$6po{RrLN`5A
+zn*%K<3<1Z@I-lt1c8h;Z*7&AlOkVIUKRnVi(@j_JO>oOQi#YcJGn^m6F@hTazl^(N
+zIdZ|$?F51wf>6WdLhZ!G5^Y#+aW=8oO&d>9zVz~oaEJR>eJeXys#L7g;WuA1jE~uO
+z4KFS)y|IK={dZt$*<CpQ<1DOxgQaMC{`$Zr6T@9S0&ls9{Z7!zql4<0RT#i2-~1lN
+z=S$ExCQ3{2ouJ*HS~;B7&2KqAcmlw3iaSC5pZ4Lq5+`W&yN?^Sg;uY;7o2}<zNzKr
+z&sLo+7aO%^ZKl<~<>J=<snh4q*!1x80HUfMiU{X%6<UeE_vjFV(1bE7sOaX;{z||8
+zD&-+as%CxU+B-p{>pJT=x@88%%H)&`G7-y+dXD0+Q-ADFm5!GqHl{v(@HP<kF<qaU
+z7fC~gb9;q`^l1(Gm#&wpU9yIhOcMVU8UkO8`6&(ghl|*+(vaU{<g<+EQ>a77*AB~B
+zJ2K9z;qejCYi3^k2MA_-lY1>?Ucr-PerjH-c_n`nG~wnIyjkX_<i2(h`&Dv_-Md+O
+z_DSG(P{ywNb;K!Szj}S8W@qUQwPvl>ZM<7wpsAe{@qkg+7`Y)kbTN!afN>Yr4YBR*
+z1;srmi=n7_(PvT2j@pB8D5DnUoD#+`9s|Y_i@|$!E_`u&>~7$QV?Zw`DLr<NLV@`=
+zx0D`)Ls@$)W$c#%L!4c>=<fS#v_ngjCAb$TNyj1&$DyokvbPESF)er;Xv=`6_a5xY
+z<kI~V%8E0ZJa3)=&V3HYALTsIqR!Ce4$16adqGK=J@+$;eNfZ`PMS765W{h2TMx&f
+ztfR#5TEi9eQH;`qjAl;FTz2=mFrKUnYk{&NM6u`b9<WmM`yq$LhlM-G8FgFb*gP6Q
+zn^wkg0w2PiV~%yuL0pgF2FT7`*R~`FzK8C5mZi0KRVQri`0$_{%Br0yW4W3!olAvF
+z?_NJUtia0pKFm1bMuO3@wxxr<tO3R&62snzaQWT0CS~P)G(ggRA`jHHPUKSB^jL_b
+zuWmdPhZdpt9uJYUSB%SF)ZTj{K+^s;57d3{rD)w6hZGwkhRfP-DeL=_5(7>`F58E)
+zqU=dt-_>4!tw-_hM-SC?ucg_?rxLJ~+r-0hC}Ydg(AF_p=rd&ukDC!Km(q_<OEmXt
+z(L;6JkM31T(mt?XVrfUO2jWo1HjQ>z!#6-T);pX87c%2?--{_azd<0Xo7EmrI<!me
+zqo0u|+U?x~PKr(p2po1ddZ_MoqQiMwc|$fjtk75A3tEcx*yPZ}HGqfWP(~e0n^&71
+zlDuGGfW<w{ZSh#a-GztaP}Y{E*!ry=&E1M{@psU!4rk$~p&Q%UknDv^4|uthmThM|
+zzRUTYkamPf>YAt*q!f$4Qy@u)6~krKh?F@z=rF>&Er#e`E7%<zI|Zo~V;7?Z*Jiz-
+zrS#u!ho*1jJP3ytq5p;?hW}RwhPZ?N>u{n|KDpr#O>SelUfI+3F(VGg-A3AbF5fH;
+zW$nY1^S*lfsC`ThO<zqif}dVlu~Kwml(E#UY7ZDGYtfj*z-u}Dqn-!qdYsZ$y*&Yv
+zdT7-XQpy;O2T1Og**A+rS;r`453|={$@^;txPuv$visY|SmtWn!*D2Ti&C_1zeDL!
+zvqw9$q#tX;0gn;;pB8S3SB{Kr8tt$atq0!0c0Bh`zyo%z?V~AsibF|=>S0<hcpXMf
+zdD;)R<LT!O9*#p9`!mfuGU3p~!wD|mH!&kpT0b6<Nb*UBhwFaaQZ(ggJDz*((F<aV
+zrW|WWG!IF7!Rv6kQ>WI+c07Kg;vqS-2xEBMBZjYE7~~Gt$&~f~gv4|HWUrMzl(B7T
+z=dY6z%RSlYrClku=9I*8uYrCitkV+9Jv8bCtHYdAJH=-OmVU$33r>n&oDn$wd6Wm^
+zP*%N2*;h>othNnl*DF>orB!DIl7EiNZRuXyQ%35X#8UrH?qRxbQ;Mda7dVUJ8A`#r
+zAh7r`axd*lIl(?Bu*CDZUeG$M^vaKSk<r}CJP*X7th(O8f~j{Tml#LC`QxJRU{z0P
+n&E){4H@|qA_xOs(v2VtGgE*A6*E;Oj)Xm&g;P@wyTr&L+cR#$q
+
+literal 0
+HcmV?d00001
+
+-- 
+2.29.2.windows.2
+
