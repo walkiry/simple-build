@@ -10,13 +10,14 @@ build_path="./build"
 log_path="./log-sb"
 OSTYPE=$(uname)
 cmake_subproject_list=
+LR="\n"
 
 getOS()
 {
 	local _retval="$1"
 	local result=""
 	case "$OSTYPE" in
-		msys)
+		MINGW64_NT*)
 			result="win"
 			;;
 		cygwin)
@@ -42,6 +43,7 @@ getOS()
 			;;
 	esac
 
+	echo "found $result"
 	eval $_retval="'${result}'"
 }
 
@@ -85,15 +87,16 @@ check_is_linux()
 check_os_compatible()
 {
 	if [ is_mac -eq 0 ]; then
-		printf "${RED}Mac was not tested ${RESET}\n"
+		printf "${RED}Mac was not tested ${RESET}${LR}"
 		exit 255
 	fi
 }
 
+
 tarball_retrieve()
 {
 	if [ $# -lt 3 ]; then
-		printf "${RED}Not enought param ${RESET}\n"
+		printf "${RED}Not enought param ${RESET}${LR}"
 		return	
 	fi
 
@@ -105,10 +108,10 @@ tarball_retrieve()
 		mkdir archives
 	fi
 
-	wget -O archives/${3} --max-redirect 30 $1 
+	curl -L $1 -o archives/${3} 
 
 	if [ $? -ne 0 ]; then
-		printf "${RED} Address not found ${1} ${RESET}\n"
+		printf "${RED} Address not found ${1} ${RESET}${LR}"
 		return
 	fi
 
@@ -125,7 +128,7 @@ tarball_retrieve()
 git_retrieve()
 {
 	if [ $# -lt 3 ]; then
-		printf "${RED}Not enought param ${RESET}\n"
+		printf "${RED}Not enought param ${RESET}${LR}"
 		return	
 	fi
 
@@ -136,7 +139,7 @@ git_retrieve()
 	git clone $1 $2
 
 	if [ $? -ne 0 ]; then
-		printf "\n${RED}===> Cloning source code $file ${RESET}\n\n"
+		printf "${LR}${RED}===> Cloning source code $file ${RESET}${LR}${LR}"
 		exit $?
 	fi
 
@@ -201,13 +204,19 @@ apply_patches()
 	done
 
 	if [ $? -ne 0 ]; then
-	       printf "${RED} ${file}: ${filename}_applying_patch did not succeed${RESET}\n"
+	       printf "${RED} ${file}: ${filename}_applying_patch did not succeed${RESET}${LR}"
 	else 
 		touch ./.stamp_patched
         fi
 
 	cd -
 }
+
+check_is_windows
+if [ $? -eq 0 ];then
+	#LR="\n\r"
+	echo "OK Runnign oin windows"
+fi
 
 recipes=$(find ./packages -maxdepth 2 -iname "*.sb")
 
@@ -240,11 +249,11 @@ map_deps=""
 #establish count, it's easier than file path
 for file in $recipes 
 do
-	map_deps="${map_deps}${pos_graph};${file}\n"
+	map_deps="${map_deps}${pos_graph};${file}${LR}"
 	pos_graph=$((pos_graph+1))
 done
 
-echo "${map_deps}" > $pos_file
+echo -e "${map_deps}" > $pos_file
 
 map_deps_file="${log_path}/map_deps.info"
 if [ -e  $map_deps_file ]; then
@@ -254,6 +263,7 @@ fi
 dependency_graph_lines=""
 recipes_ordered=""
 #read the dependencies
+
 for file in $recipes 
 do
 	. ${file}
@@ -273,25 +283,29 @@ do
 		file_dependency=$(grep "${dep}" $pos_file | cut -d";" -f1)
 		dependency_graph_lines="${dependency_graph_lines}${file_dependency} "
 	done
-	dependency_graph_lines="${dependency_graph_lines}\n"
+	dependency_graph_lines="${dependency_graph_lines}${LR}"
 done
 
-echo "${dependency_graph_lines}" > $map_deps_file
+echo -e "${dependency_graph_lines}" > $map_deps_file
 sorted_file_with_dependied="${log_path}/sorted_files_with_dpendencies.info"
 tsort < $map_deps_file > "${sorted_file_with_dependied}"
+if [ $? -ne 0 ]; then
+	printf "${YELLOW} Issue with finding dependencies, this happens when running on windows${RESET}${LR}"
+	recipes_ordered=$recipes
+else
+	ordered_dependencies=$(tac "${sorted_file_with_dependied}")
+	# look for filename form the sorted list
+	for dependancy in $ordered_dependencies
+	do
+		filename_dependancy=$(grep "${dependancy}" $pos_file | cut -d";" -f2)
+		result=$(echo $recipes_ordered | grep $filename_dependancy)
+		if [ -z "${result}" ]; then
+			recipes_ordered="${recipes_ordered}${filename_dependancy} " 
+		fi
+	done
+fi
 
-ordered_dependencies=$(tac "${sorted_file_with_dependied}")
-# look for filename form the sorted list
-for dependancy in $ordered_dependencies
-do
-	filename_dependancy=$(grep "${dependancy}" $pos_file | cut -d";" -f2)
-	result=$(echo $recipes_ordered | grep $filename_dependancy)
-	if [ -z "${result}" ]; then
-		recipes_ordered="${recipes_ordered}${filename_dependancy} " 
-	fi
-done
-
-echo "${recipes_ordered}" > "${log_path}/ordered_build.info"
+echo -e "${recipes_ordered}" > "${log_path}/ordered_build.info"
 ordered_list=$(eval echo "${recipes_ordered}")
 for file in $ordered_list
 do
@@ -302,22 +316,22 @@ do
 
 # Type could be git ot taball
 	typepackage="git"
-	printf "\n${GREEN}===> Autotool packet $file ${RESET}\n\n"
+	printf "${LR}${GREEN}===> Autotool packet $file ${RESET}${LR}${LR}"
 
 	git_addr=$(eval echo \$"${filename}_git")
 	if [ -z $git_addr ]; then
-	       printf "Trying tarballs\n"
+	       printf "Trying tarballs${LR}"
 
 		tarball_addr=$(eval echo \$"${filename}_tarball_site")
 		if [ -z $tarball_addr ]; then
-		       printf "${RED} In ${file}: ${filename}_tarball_site var does not exits ${RESET}\n"
-		       printf "${RED} In ${file}: ${filename}_git var does not exits ${RESET}\n"
+		       printf "${RED} In ${file}: ${filename}_tarball_site var does not exits ${RESET}${LR}"
+		       printf "${RED} In ${file}: ${filename}_git var does not exits ${RESET}${LR}"
 		       continue
 		fi
 
 		tarball_name=$(eval echo \$"${filename}_tarball_name")
 		if [ -z $tarball_addr ]; then
-		       printf "${RED} In ${file}: ${filename}_tarball_name var does not exits ${RESET}\n"
+		       printf "${RED} In ${file}: ${filename}_tarball_name var does not exits ${RESET}${LR}"
 		       continue
 		fi
 
@@ -325,19 +339,19 @@ do
 	else
 		git_version=$(eval echo \$"${filename}_version")
 		if [ -z $git_version ]; then
-		       printf "${RED}In ${file}: ${filename}_version does not exits ${RESET}\n"
+		       printf "${RED}In ${file}: ${filename}_version does not exits ${RESET}${LR}"
 		       continue
 		fi
 
 		git_recursive=$(eval echo \$"${filename}_git_recursive")
 		if [ -z $git_recursive ]; then
-		       printf "${RED}In ${file}: ${filename}_git_recursive assuming recursive ${RESET}\n"
+		       printf "${RED}In ${file}: ${filename}_git_recursive assuming recursive ${RESET}${LR}"
 		fi
 	fi
 
 	src_dirs=$(eval echo \$"${filename}_src_dir")
 	if [ -z $src_dirs ]; then
-	       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
+	       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}${LR}"
 	       continue
 	fi
 
@@ -345,7 +359,7 @@ do
 	src_dirs="${build_path}/${src_dirs}"
 	build_cmd=$(eval echo \$"${filename}_build_cmd")
 	if [ -z "$build_cmd" ]; then
-	       printf "${RED}In ${file}: ${filename}_build_cmd does not exits ${RESET}\n"
+	       printf "${RED}In ${file}: ${filename}_build_cmd does not exits ${RESET}${LR}"
 	       continue
         fi
 
@@ -366,13 +380,13 @@ do
 		esac
 	else 
 		printf "${YELLOW} ${file}: Already got sources. " 
-		printf	"If you want to redownload it delete .stamp_download${RESET}\n"
+		printf	"If you want to redownload it delete .stamp_download${RESET}${LR}"
 	fi
 
 
 	if [ -e $src_dirs/.stamp_built ]; then
 		printf "${YELLOW} ${file}: Already got sources. " 
-		printf	"If you want to rebuild it delete .stamp_built${RESET}\n"
+		printf	"If you want to rebuild it delete .stamp_built${RESET}${LR}"
 		continue
 	fi
 
@@ -397,19 +411,16 @@ do
 	if [ $? -eq 0 ]; then
 		windows_compat=$(eval echo \$"${filename}_windows_compat")
 		if [ ! -z $windows_compat ]; then
-			printf "${GREEN}Adding ${src_dirs} to the cmakefile ${RESET}\n"
+			printf "${GREEN}Adding ${src_dirs} to the cmakefile ${RESET}${LR}"
 			if [ $windows_compat -eq 1 ]; then
-				cmake_subproject_list="${cmake_subproject_list}\nadd_subdirectory(${src_dirs})"
-				uu
-				touch .stamp_built
-				continue;
+				cmake_subproject_list="${cmake_subproject_list}${LR}add_subdirectory(${src_dirs})"
 			fi
 		fi
 	else
 		echo "Running ${build_cmd}"
 		sh -c "eval ${build_cmd}"
 		if [ $? -ne 0 ]; then
-		       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
+		       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}${LR}"
 		       exit 255
 		fi
 	fi
@@ -420,8 +431,9 @@ done
 
 check_is_windows
 if [ $? -eq 0 ]; then
-	echo ${cmake_subproject_list} > CMakeLists.txt
+	echo -e "FOUND vars ${cmake_subproject_list}"
+	echo -e ${cmake_subproject_list} > CMakeLists.txt
 fi
 
-printf "\n******Done getting packets******\n"
+printf "${LR}******Done getting packets******${LR}"
 
