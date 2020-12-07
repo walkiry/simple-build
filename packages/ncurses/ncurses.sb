@@ -5,5 +5,7 @@ ncurses_tarball_site=https://ftp.gnu.org/gnu/ncurses/ncurses-6.2.tar.gz
 ncurses_tarball_name=ncurses-6.2.tar.gz
 ncurses_src_dir=ncurses-6.2
 
+ncurses_linux_compat=1
+
 ncurses_need_autotoolize=0
 ncurses_build_cmd="./configure --with-shared --exec-prefix=$PREFIX_INSTALL_PATH --prefix=$PREFIX_PATH && make -j4 && make install && ln -s $PREFIX_INSTALL_PATH/include/ncurses/curses.h $PREFIX_INSTALL_PATH/include/curses.h"

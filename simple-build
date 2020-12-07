@@ -8,7 +8,87 @@ YELLOW="\e[93m"
 scriptpath="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 build_path="./build"
 log_path="./log-sb"
+OSTYPE=$(uname)
+cmake_subproject_list=
 
+getOS()
+{
+	local _retval="$1"
+	local result=""
+	case "$OSTYPE" in
+		msys)
+			result="win"
+			;;
+		cygwin)
+			result="win"
+			;;
+		darwin*)
+			result="mac"
+			;;
+		Linux*) 
+			result="linux"
+			;;
+		linux-gnu*)
+			# We have to check for WSL
+			if [[ `uname -r` == *"Microsoft"* ]]; then
+				result="win"
+			else
+				result="linux"
+			fi
+			;;
+		*)
+			echo "ERROR: Unknown OSTYPE: $OSTYPE"
+			exit 127
+			;;
+	esac
+
+	eval $_retval="'${result}'"
+}
+
+# Returns 0 if running OS is windows
+check_is_windows()
+{
+	local osName
+	getOS osName
+
+	if [ "$osName" = "win" ]; then
+		return 0
+	fi
+
+	return 1
+}	
+
+# Returns 0 if running OS is mac
+check_is_mac()
+{
+	local osName
+	getOS osName
+	if [ "$osName" = "mac" ]; then
+		return 0
+	fi
+
+	return 1
+}
+
+# Returns 0 if running OS is linux
+check_is_linux()
+{
+	local osName
+	getOS osName
+	if [ $osName = "linux" ]; then
+		return 0
+	fi
+
+	return 1
+}
+
+check_os_compatible()
+{
+	if [ is_mac -eq 0 ]; then
+		printf "${RED}Mac was not tested ${RESET}\n"
+		exit 255
+	fi
+}
 
 tarball_retrieve()
 {
@@ -296,6 +376,7 @@ do
 		continue
 	fi
 
+	# Assuming linux otherwise
 	autotoolize_cmd=$(eval echo \$"${filename}_need_autotoolize")
 	if [ ! -z $autotoolize_cmd ]; then
 		if [ $autotoolize_cmd -eq 1 ]; then
@@ -311,16 +392,36 @@ do
 	fi
 
 	cd ${src_dirs}
-	echo "Running ${build_cmd}"
-	sh -c "eval ${build_cmd}"
-	if [ $? -ne 0 ]; then
-	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
-	       exit 255
-        fi
+
+	check_is_windows
+	if [ $? -eq 0 ]; then
+		windows_compat=$(eval echo \$"${filename}_windows_compat")
+		if [ ! -z $windows_compat ]; then
+			printf "${GREEN}Adding ${src_dirs} to the cmakefile ${RESET}\n"
+			if [ $windows_compat -eq 1 ]; then
+				cmake_subproject_list="${cmake_subproject_list}\nadd_subdirectory(${src_dirs})"
+				uu
+				touch .stamp_built
+				continue;
+			fi
+		fi
+	else
+		echo "Running ${build_cmd}"
+		sh -c "eval ${build_cmd}"
+		if [ $? -ne 0 ]; then
+		       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
+		       exit 255
+		fi
+	fi
 
 	touch .stamp_built
 	cd -
 done
+
+check_is_windows
+if [ $? -eq 0 ]; then
+	echo ${cmake_subproject_list} > CMakeLists.txt
+fi
 
 printf "\n******Done getting packets******\n"
 
