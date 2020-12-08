@@ -28,6 +28,7 @@ getOS()
 			;;
 		Linux*) 
 			result="linux"
+			echo "Linux"
 			;;
 		linux-gnu*)
 			# We have to check for WSL
@@ -217,10 +218,7 @@ apply_patches()
 	cd -
 }
 
-check_is_windows
-
 recipes=$(find ./packages -maxdepth 2 -iname "*.sb")
-
 for arg in "$@"; do
 	shift
 		case "$arg" in
@@ -254,7 +252,7 @@ do
 	pos_graph=$((pos_graph+1))
 done
 
-echo -e "${map_deps}" > $pos_file
+echo "${map_deps}" > $pos_file
 
 map_deps_file="${log_path}/map_deps.info"
 if [ -e  $map_deps_file ]; then
@@ -287,12 +285,13 @@ do
 	dependency_graph_lines="${dependency_graph_lines}${LR}"
 done
 
-echo -e "${dependency_graph_lines}" > $map_deps_file
+echo "${dependency_graph_lines}" > $map_deps_file
 sorted_file_with_dependied="${log_path}/sorted_files_with_dpendencies.info"
 tsort < $map_deps_file > "${sorted_file_with_dependied}"
+
 if [ $? -ne 0 ]; then
 	printf "${YELLOW} Issue with finding dependencies, this happens when running on windows${RESET}${LR}"
-	recipes_ordered=$recipes
+	recipes_ordered=${recipes}
 else
 	ordered_dependencies=$(tac "${sorted_file_with_dependied}")
 	# look for filename form the sorted list
@@ -306,7 +305,7 @@ else
 	done
 fi
 
-echo -e "${recipes_ordered}" > "${log_path}/ordered_build.info"
+echo "${recipes_ordered}" > "${log_path}/ordered_build.info"
 ordered_list=$(eval echo "${recipes_ordered}")
 for file in $ordered_list
 do
@@ -418,7 +417,7 @@ do
 
 	cd ${src_dirs}
 
-	check_is_windows
+	check_is_linux
 	if [ $? -eq 0 ]; then
 		echo "Running ${build_cmd}"
 		sh -c "eval ${build_cmd}"
