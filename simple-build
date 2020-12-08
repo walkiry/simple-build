@@ -43,7 +43,6 @@ getOS()
 			;;
 	esac
 
-	echo "found $result"
 	eval $_retval="'${result}'"
 }
 
@@ -219,10 +218,6 @@ apply_patches()
 }
 
 check_is_windows
-if [ $? -eq 0 ];then
-	#LR="\n\r"
-	echo "OK Runnign oin windows"
-fi
 
 recipes=$(find ./packages -maxdepth 2 -iname "*.sb")
 
