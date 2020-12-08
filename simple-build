@@ -203,7 +203,7 @@ apply_patches()
 		echo  "Applying patch $i"
 		echo $ ${patch_folder}/${i}
 		if [ "$moderetrieved" = "git" ]; then
- 			git apply -p1 <  ${patch_folder}/${i}
+ 			git am ${patch_folder}/${i}
 		else
  			patch -p1 <  ${patch_folder}/${i}
 		fi
