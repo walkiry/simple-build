@@ -252,7 +252,7 @@ do
 	pos_graph=$((pos_graph+1))
 done
 
-echo "${map_deps}" > $pos_file
+printf "${map_deps}" > $pos_file
 
 map_deps_file="${log_path}/map_deps.info"
 if [ -e  $map_deps_file ]; then
@@ -285,7 +285,7 @@ do
 	dependency_graph_lines="${dependency_graph_lines}${LR}"
 done
 
-echo "${dependency_graph_lines}" > $map_deps_file
+printf "${dependency_graph_lines}" > $map_deps_file
 sorted_file_with_dependied="${log_path}/sorted_files_with_dpendencies.info"
 tsort < $map_deps_file > "${sorted_file_with_dependied}"
 
@@ -305,7 +305,7 @@ else
 	done
 fi
 
-echo "${recipes_ordered}" > "${log_path}/ordered_build.info"
+printf "${recipes_ordered}" > "${log_path}/ordered_build.info"
 ordered_list=$(eval echo "${recipes_ordered}")
 for file in $ordered_list
 do
